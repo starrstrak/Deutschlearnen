@@ -886,6 +886,10 @@ VIEWS.settings=function(){
   h+='<label for="rateRng">Vitesse de la voix : <b id="rateVal">'+DB.rate.toFixed(2)+'</b></label><input id="rateRng" type="range" min="0.5" max="1.1" step="0.05" value="'+DB.rate+'">';
   h+='<button class="btn small" data-act="test">'+ICON.spk+' Tester la voix</button></section>';
   h+='<section class="panel"><h2>Sons</h2><button class="switch" data-act="snd" aria-pressed="'+(DB.sound?'true':'false')+'"><span>Bruitages de jeu</span><span class="pill"></span></button></section>';
+  h+='<section class="panel"><h2>Sauvegarde</h2><p class="hint">Les joueurs et leurs progrès sont enregistrés sur cet appareil. Fais une sauvegarde de temps en temps, ou pour les retrouver sur un autre appareil ou après un effacement du navigateur.</p>';
+  if(S.bkmsg)h+='<p class="flashmsg" role="status">'+esc(S.bkmsg)+'</p>';
+  h+='<div class="row"><button class="btn small" data-act="bkmake">Créer la sauvegarde</button><button class="btn small ghost" data-act="bkdl">Télécharger</button></div>';
+  h+='<label for="bkt">Sauvegarde (à copier, ou à coller pour restaurer)</label><textarea id="bkt" rows="4" autocomplete="off" spellcheck="false">'+esc(S.bk||'')+'</textarea><button class="btn small alt" data-act="bkrest">Restaurer depuis ce texte</button><p class="hint">Restaurer ajoute les joueurs et les mots manquants et garde le meilleur progrès, sans rien effacer.</p></section>';
   h+='<section class="panel"><h2>Mode parent</h2>';
   if(S.pmsg)h+='<p class="warn" role="status">'+esc(S.pmsg)+'</p>';
   if(!DB.pin)h+='<p class="hint">Pour supprimer ou masquer des mots, crée un code à 4 chiffres. Les enfants ne verront pas les boutons ✕.</p><form data-form="pin" style="display:grid;gap:10px"><label for="pin1">Nouveau code (4 chiffres)</label><input id="pin1" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required><button class="btn small alt" type="submit">Créer le code</button></form>';
@@ -1179,6 +1183,54 @@ ACT.unhide=function(t){
 };
 ACT.parentoff=function(){S.parent=false;S.confirm=null;S.pmsg=null;render();};
 
+/* sauvegarde : copie de secours des joueurs, progrès et mots, à garder ou à transférer vers un autre appareil */
+function backupText(){
+  var o={app:'deutsch-igi',v:1,players:DB.players,custom:DB.custom||[],hidden:DB.hidden||{},dir:DB.dir,rate:DB.rate,voice:DB.voice,sound:DB.sound};
+  return JSON.stringify(o);
+}
+function importBackup(txt){
+  var o;
+  try{o=JSON.parse(txt);}catch(e){return 'Texte illisible : copie la sauvegarde en entier.';}
+  if(!o||o.app!=='deutsch-igi'||!Array.isArray(o.players))return 'Ce texte n’est pas une sauvegarde de l’appli.';
+  var n=0;
+  o.players.forEach(function(q){
+    if(!q||!q.id||!q.name)return;
+    var p=null;
+    DB.players.forEach(function(x){if(x.id===q.id)p=x;});
+    if(!p){q.words=q.words||{};DB.players.push(q);n++;return;}
+    p.stars=Math.max(p.stars||0,q.stars||0);p.xp=Math.max(p.xp||0,q.xp||0);
+    if((q.last||0)>=(p.last||0)){p.last=q.last||0;p.streak=q.streak||0;}
+    p.words=p.words||{};
+    Object.keys(q.words||{}).forEach(function(k){var a=p.words[k],b=q.words[k];if(!a||(b&&b.b>a.b))p.words[k]=b;});
+  });
+  DB.custom=DB.custom||[];
+  var ids={};DB.custom.forEach(function(c){ids[c.id]=1;});
+  (o.custom||[]).forEach(function(c){if(c&&c.id&&c.w&&c.f&&!ids[c.id]){DB.custom.push(c);ids[c.id]=1;}});
+  DB.hidden=DB.hidden||{};
+  Object.keys(o.hidden||{}).forEach(function(k){DB.hidden[k]=o.hidden[k];});
+  if(!me()&&DB.players.length===1)DB.cur=DB.players[0].id;
+  migrateCustom();save();rebuildCustom();
+  return 'Sauvegarde restaurée ('+o.players.length+' joueur'+(o.players.length>1?'s':'')+').';
+}
+ACT.bkmake=function(){
+  S.bk=backupText();S.bkmsg='Sauvegarde créée. Copie-la ou télécharge-la, et garde-la en lieu sûr.';
+  try{navigator.clipboard.writeText(S.bk).then(function(){S.bkmsg='Sauvegarde copiée. Colle-la dans un message ou un fichier pour la garder.';render();});}catch(e){}
+  render();
+};
+ACT.bkdl=function(){
+  try{
+    var b=new Blob([backupText()],{type:'application/json'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='deutsch-igi-sauvegarde.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    S.bkmsg='Fichier téléchargé.';
+  }catch(e){S.bkmsg='Téléchargement impossible : utilise « Créer la sauvegarde » et copie le texte.';}
+  render();
+};
+ACT.bkrest=function(){
+  var ta=document.getElementById('bkt');if(!ta)return;
+  S.bkmsg=importBackup(ta.value||'');S.bk=null;render();
+};
+
 /* réglages */
 ACT.test=function(){speak('Guten Tag! Ich bin Igi. Wir lernen zusammen Deutsch.');};
 ACT.snd=function(){DB.sound=!DB.sound;save();render();if(DB.sound)sfx.ok();};
@@ -1259,6 +1311,7 @@ if(!me())DB.cur=null;
 migrateCustom();
 rebuildCustom();
 loadShared();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
 S.screen=(me()&&DB.players.length===1)?'home':'profiles';
 render();
 })();
