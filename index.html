@@ -486,6 +486,20 @@ function loadShared(){
   }catch(e){}
 }
 /* mots ajoutés par la famille, dans n’importe quel monde, propres à chaque joueur */
+function migrateCustom(){
+  DB.custom=DB.custom||[];
+  var ids={};DB.custom.forEach(function(c){ids[c.id]=1;});
+  DB.players.forEach(function(p){
+    if(!p.custom)return;
+    p.custom.forEach(function(c){
+      if(ids[c.id])return;
+      var dup=DB.custom.some(function(d){return (d.wid||'perso')===(c.wid||'perso')&&d.w.toLowerCase()===c.w.toLowerCase()&&d.f.toLowerCase()===c.f.toLowerCase();});
+      if(!dup){DB.custom.push(c);ids[c.id]=1;}
+    });
+    delete p.custom;
+  });
+  save();
+}
 function rebuildCustom(){
   var p=me();
   WORLDS.forEach(function(w){
@@ -501,7 +515,7 @@ function rebuildCustom(){
     var x={k:'shared:'+c.id,world:w.id,a:c.a,w:c.w,f:c.f,e:c.e,p:c.p,s:'',cu:true,sh:true};
     w.words.push(x);WBYK[x.k]=x;ALL.push(x);
   });
-  if(p&&p.custom)p.custom.forEach(function(c){
+  (DB.custom||[]).forEach(function(c){
     var w=WORLD[c.wid]||WORLD.perso;
     var x={k:'perso:'+c.id,world:w.id,a:c.a||'',w:c.w,f:c.f,e:c.e||'',p:c.p||'',s:'',cu:true};
     w.words.push(x);WBYK[x.k]=x;ALL.push(x);
@@ -510,13 +524,13 @@ function rebuildCustom(){
 function addCustom(a,w,f,e,pl,wid){
   var p=me();
   if(!p||!w||!f)return false;
-  p.custom=p.custom||[];
-  if(p.custom.length>=300)return false;
+  DB.custom=DB.custom||[];
+  if(DB.custom.length>=600)return false;
   wid=(WORLD[wid]&&wid)||'perso';
   pl=(pl||'').trim().replace(/^die\s+/i,'');
-  var dup=p.custom.some(function(c){return (c.wid||'perso')===wid&&c.w.toLowerCase()===w.toLowerCase()&&c.f.toLowerCase()===f.toLowerCase();});
+  var dup=DB.custom.some(function(c){return (c.wid||'perso')===wid&&c.w.toLowerCase()===w.toLowerCase()&&c.f.toLowerCase()===f.toLowerCase();});
   if(dup)return false;
-  p.custom.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),a:a||'',w:w,f:f,e:e||'',p:pl,wid:wid});
+  DB.custom.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),a:a||'',w:w,f:f,e:e||'',p:pl,wid:wid});
   return true;
 }
 /* sens des exercices : de = allemand vers français, fr = français vers allemand, mix = au hasard */
@@ -1142,7 +1156,7 @@ ACT.addq=function(){
 };
 ACT.delw=function(t){
   var k=t.dataset.k,p=me();if(!p)return;
-  p.custom=(p.custom||[]).filter(function(c){return 'perso:'+c.id!==k;});
+  DB.custom=(DB.custom||[]).filter(function(c){return 'perso:'+c.id!==k;});
   delete p.words[k];
   save();rebuildCustom();render();
 };
@@ -1216,6 +1230,7 @@ try{
 setTimeout(function(){TTS.ready=true;loadVoices();if(S.screen==='home')render();},1800);
 if(DB.players.length===1)DB.cur=DB.players[0].id;
 if(!me())DB.cur=null;
+migrateCustom();
 rebuildCustom();
 loadShared();
 S.screen=(me()&&DB.players.length===1)?'home':'profiles';
