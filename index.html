@@ -448,7 +448,8 @@ var DB=null;
 try{DB=JSON.parse(lsGet()||'null');}catch(e){DB=null;}
 if(!DB||!DB.players)DB={players:[],cur:null,sound:true,voice:'',rate:0.85};
 if(typeof DB.rate!=='number')DB.rate=0.85;
-function save(){lsSet(JSON.stringify(DB));}
+function save(){lsSet(JSON.stringify(DB));try{if(window.IGI_CLOUD)window.IGI_CLOUD.changed();}catch(e){}}
+function touchReg(){DB.rupd=Date.now();}
 function me(){for(var i=0;i<DB.players.length;i++)if(DB.players[i].id===DB.cur)return DB.players[i];return null;}
 function ws(x){var p=me();return p.words[x.k]||(p.words[x.k]={b:0,d:0});}
 var INT=[0,1,2,4,7];
@@ -459,7 +460,13 @@ function seenCount(p){return ALL.filter(function(x){return p.words[x.k];}).lengt
 function level(xp){return 1+Math.floor(xp/120);}
 
 /* mots partagés : fichier mots.txt du site, identique pour tous ; format « monde | der Hund = le chien = Hunde = 🐶 » */
-var SHARED=[];
+var SHARED=[],SHARED_TXT=[],SHARED_FS=[];
+function cleanEmo(e){return String(e||'').replace(/[<>&"'`]/g,'').slice(0,12);}
+function setSharedAll(){
+  var seen={},out=[];
+  SHARED_FS.concat(SHARED_TXT).forEach(function(c){var k=c.wid+'-'+c.w.toLowerCase();if(seen[k])return;seen[k]=1;c.id=k;out.push(c);});
+  SHARED=out;
+}
 function parseShared(t){
   var out=[];
   String(t||'').split(/\r?\n/).forEach(function(l){
@@ -467,21 +474,41 @@ function parseShared(t){
     var b=l.indexOf('|');if(b<1)return;
     var wid=l.slice(0,b).trim().toLowerCase(),r=l.slice(b+1).split(/\s*=\s*/);
     if(!WORLD[wid]||r.length<2)return;
-    var de=r[0].trim(),fr=(r[1]||'').trim(),pl=(r[2]||'').trim().replace(/^die\s+/i,''),em=(r[3]||'').trim(),a='',m=/^(der|die|das)\s+(.+)$/i.exec(de);
+    var de=r[0].trim(),fr=(r[1]||'').trim(),pl=(r[2]||'').trim().replace(/^die\s+/i,''),em=cleanEmo(r[3]),a='',m=/^(der|die|das)\s+(.+)$/i.exec(de);
     if(m){a=m[1].toLowerCase();de=m[2].trim();}
     if(!de||!fr)return;
     out.push({id:wid+'-'+de.toLowerCase(),a:a,w:de,f:fr,e:em,p:pl,wid:wid});
   });
   return out;
 }
+function fsFromList(l){
+  var out=[];
+  (l||[]).forEach(function(f){
+    if(!f||!f.w||!f.f||!WORLD[f.wid])return;
+    var a=/^(der|die|das)$/.test(f.a||'')?f.a:'';
+    out.push({id:'',a:a,w:String(f.w).slice(0,40),f:String(f.f).slice(0,60),e:cleanEmo(f.e),p:String(f.p||'').slice(0,40),wid:f.wid,fid:f.fid||''});
+  });
+  return out;
+}
+function setFsWords(list){
+  try{localStorage.setItem('deutsch-igi-fs',JSON.stringify(list));}catch(e){}
+  SHARED_FS=fsFromList(list);setSharedAll();rebuildCustom();softRender();
+}
+function softRender(){
+  var a=document.activeElement;
+  if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&app.contains(a))return;
+  if(S.screen==='home'||S.screen==='world'||S.screen==='settings'||S.screen==='profiles')render();
+}
 function loadShared(){
-  try{var c=localStorage.getItem('deutsch-igi-shared');if(c){SHARED=parseShared(c);rebuildCustom();}}catch(e){}
+  try{var fc=localStorage.getItem('deutsch-igi-fs');if(fc)SHARED_FS=fsFromList(JSON.parse(fc));}catch(e){}
+  try{var c=localStorage.getItem('deutsch-igi-shared');if(c)SHARED_TXT=parseShared(c);}catch(e){}
+  setSharedAll();rebuildCustom();
   try{
     fetch('mots.txt?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text();}).then(function(t){
-      SHARED=parseShared(t);
+      SHARED_TXT=parseShared(t);setSharedAll();
       try{localStorage.setItem('deutsch-igi-shared',t);}catch(e){}
       rebuildCustom();
-      if(S.screen==='home'||S.screen==='world')render();
+      softRender();
     }).catch(function(){});
   }catch(e){}
 }
@@ -511,7 +538,7 @@ function rebuildCustom(){
   SHARED.forEach(function(c){
     var w=WORLD[c.wid];if(!w||hid['shared:'+c.id])return;
     if(w.words.some(function(y){return !y.cu&&y.w.toLowerCase()===c.w.toLowerCase();}))return;
-    var x={k:'shared:'+c.id,world:w.id,a:c.a,w:c.w,f:c.f,e:c.e,p:c.p,s:'',cu:true,sh:true};
+    var x={k:'shared:'+c.id,world:w.id,a:c.a,w:c.w,f:c.f,e:c.e,p:c.p,s:'',cu:true,sh:true,fid:c.fid||''};
     w.words.push(x);WBYK[x.k]=x;ALL.push(x);
   });
   (DB.custom||[]).forEach(function(c){
@@ -529,6 +556,7 @@ function addCustom(a,w,f,e,pl,wid){
   pl=(pl||'').trim().replace(/^die\s+/i,'');
   var dup=DB.custom.some(function(c){return (c.wid||'perso')===wid&&c.w.toLowerCase()===w.toLowerCase()&&c.f.toLowerCase()===f.toLowerCase();});
   if(dup)return false;
+  touchReg();
   DB.custom.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),a:a||'',w:w,f:f,e:e||'',p:pl,wid:wid});
   return true;
 }
@@ -767,7 +795,7 @@ VIEWS.world=function(){
       var s=p.words[x.k],b=s?s.b:0,pips='';
       for(var i=1;i<=4;i++)pips+='<i'+(b>=i?' class="on"':'')+'></i>';
       var pl=x.p?(x.p==='-'?' · pas de pluriel':' · pluriel : die '+esc(x.p)):'';
-      h+='<div class="wrow"><button class="wsay" data-act="say" data-k="'+esc(x.k)+'"><span class="re'+(isNum(x)?' num':'')+'">'+(x.e||'🔤')+'</span><span class="rw"><b>'+wordHTML(x)+'</b><span>'+esc(x.f)+pl+'</span></span><span class="pips" title="Niveau du mot">'+pips+'</span></button>'+(S.parent?'<button class="btn small '+(S.confirm===x.k?'':'ghost ')+'icon del"'+(S.confirm===x.k?' style="background:var(--bad);color:#fff"':'')+' data-act="delw" data-k="'+esc(x.k)+'" aria-label="Supprimer '+esc(x.w)+'">'+(S.confirm===x.k?'Sûr ?':'✕')+'</button>':'')+'</div>';
+      h+='<div class="wrow"><button class="wsay" data-act="say" data-k="'+esc(x.k)+'"><span class="re'+(isNum(x)?' num':'')+'">'+(x.e||'🔤')+'</span><span class="rw"><b>'+wordHTML(x)+'</b><span>'+esc(x.f)+pl+'</span></span><span class="pips" title="Niveau du mot">'+pips+'</span></button>'+(isEditor()&&x.fid?'<button class="btn small '+(S.confirm===x.k?'':'ghost ')+'icon del"'+(S.confirm===x.k?' style="background:var(--bad);color:#fff"':'')+' data-act="fdel" data-k="'+esc(x.k)+'" aria-label="Supprimer pour tous '+esc(x.w)+'">'+(S.confirm===x.k?'Sûr ?':'✕ tous')+'</button>':'')+(S.parent?'<button class="btn small '+(S.confirm===x.k?'':'ghost ')+'icon del"'+(S.confirm===x.k?' style="background:var(--bad);color:#fff"':'')+' data-act="delw" data-k="'+esc(x.k)+'" aria-label="Supprimer '+esc(x.w)+'">'+(S.confirm===x.k?'Sûr ?':'✕')+'</button>':'')+'</div>';
     });
     h+='</div>';
   }
@@ -886,6 +914,31 @@ VIEWS.settings=function(){
   h+='<label for="rateRng">Vitesse de la voix : <b id="rateVal">'+DB.rate.toFixed(2)+'</b></label><input id="rateRng" type="range" min="0.5" max="1.1" step="0.05" value="'+DB.rate+'">';
   h+='<button class="btn small" data-act="test">'+ICON.spk+' Tester la voix</button></section>';
   h+='<section class="panel"><h2>Sons</h2><button class="switch" data-act="snd" aria-pressed="'+(DB.sound?'true':'false')+'"><span>Bruitages de jeu</span><span class="pill"></span></button></section>';
+  h+='<section class="panel"><h2>Synchronisation entre appareils</h2>';
+  if(S.fmsg)h+='<p class="flashmsg" role="status">'+esc(S.fmsg)+'</p>';
+  if(!CL.ready)h+='<p class="hint">'+(CL.off?'Service indisponible pour l’instant (hors ligne ?). L’appli fonctionne quand même sur cet appareil.':'Connexion au service…')+'</p>';
+  else if(DB.fam){
+    h+='<p>Code famille : <b style="font-family:var(--fd);font-size:1.3rem;letter-spacing:.06em">'+esc(DB.fam)+'</b></p><p class="hint">Entre ce code dans Réglages → Synchronisation sur les autres appareils. Les joueurs, les étoiles et les progrès se retrouvent partout. Garde ce code en lieu sûr : toute personne qui le connaît peut voir les prénoms et les progrès.</p><button class="btn small ghost" data-act="famleave">Arrêter la synchronisation ici</button>';
+  }else{
+    h+='<p class="hint">Retrouve les joueurs et les progrès sur tous les appareils de la famille. Crée un code famille sur un premier appareil, puis saisis-le sur les autres.</p><button class="btn small alt" data-act="famcreate">Créer un code famille</button><label for="famin">J’ai déjà un code</label><input id="famin" type="text" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="IGI-ABCD-EFGH"><button class="btn small" data-act="famjoin">Rejoindre cette famille</button>';
+  }
+  h+='</section><section class="panel"><h2>Espace éditeurs</h2>';
+  if(!CL.ready)h+='<p class="hint">Disponible quand le service est connecté.</p>';
+  else if(!isEditor()){
+    h+='<p class="hint">Réservé aux personnes qui ajoutent des mots pour tous les joueurs.</p>';
+    if(CL.err)h+='<p class="warn" role="status">'+esc(CL.err)+'</p>';
+    if(CL.user&&!CL.user.anon&&CL.user.email)h+='<p class="warn">Le compte '+esc(CL.user.email)+' n’est pas autorisé à modifier les mots.</p><button class="btn small ghost" data-act="gout">Se déconnecter</button>';
+    else h+='<button class="btn small" data-act="gsign">Se connecter avec Google</button>';
+  }else{
+    h+='<p class="hint">Connecté : '+esc(CL.user.email)+'. Les mots ajoutés ici apparaissent chez tous les joueurs, en quelques secondes.</p>';
+    h+='<form data-form="fsword" style="display:grid;gap:12px"><label for="fsw">Monde</label><select id="fsw">';
+    WORLDS.forEach(function(w){h+='<option value="'+w.id+'">'+w.e+' '+esc(w.de)+' · '+esc(w.fr)+'</option>';});
+    h+='</select><div class="f2"><div><label for="fsa">Article</label><select id="fsa"><option value="">aucun</option><option value="der">der</option><option value="die">die</option><option value="das">das</option></select></div><div class="grow"><label for="fsd">Mot en allemand</label><input id="fsd" type="text" maxlength="30" autocomplete="off" autocapitalize="off" required></div></div>';
+    h+='<label for="fsf">Traduction en français</label><input id="fsf" type="text" maxlength="40" autocomplete="off" required><label for="fsp">Pluriel (facultatif)</label><input id="fsp" type="text" maxlength="30" autocomplete="off" autocapitalize="off"><label for="fse">Emoji (facultatif)</label><input id="fse" type="text" maxlength="12" autocomplete="off"><button class="btn small alt" type="submit">Ajouter pour tous</button></form>';
+    h+='<label for="fsq">Ajout rapide (une ligne par mot) : monde | der Hund = le chien = Hunde = 🐶</label><textarea id="fsq" rows="4" spellcheck="false" placeholder="tiere | der Fuchs = le renard = Füchse = 🦊"></textarea><button class="btn small" data-act="fsquick">Ajouter la liste pour tous</button>';
+    h+='<p class="hint">Pour supprimer un mot pour tous : ouvre son monde, touche « ✕ tous » puis « Sûr ? ».</p><button class="btn small ghost" data-act="gout">Se déconnecter</button>';
+  }
+  h+='</section>';
   h+='<section class="panel"><h2>Sauvegarde</h2><p class="hint">Les joueurs et leurs progrès sont enregistrés sur cet appareil. Fais une sauvegarde de temps en temps, ou pour les retrouver sur un autre appareil ou après un effacement du navigateur.</p>';
   if(S.bkmsg)h+='<p class="flashmsg" role="status">'+esc(S.bkmsg)+'</p>';
   h+='<div class="row"><button class="btn small" data-act="bkmake">Créer la sauvegarde</button><button class="btn small ghost" data-act="bkdl">Télécharger</button></div>';
@@ -1175,11 +1228,11 @@ ACT.delw=function(t){
   if(k.indexOf('perso:')===0)DB.custom=(DB.custom||[]).filter(function(c){return 'perso:'+c.id!==k;});
   else{DB.hidden=DB.hidden||{};DB.hidden[k]=x?x.w:k;}
   DB.players.forEach(function(q){delete q.words[k];});
-  save();rebuildCustom();render();
+  touchReg();save();rebuildCustom();render();
 };
 ACT.unhide=function(t){
   if(!S.parent||!DB.hidden)return;
-  delete DB.hidden[t.dataset.k];save();rebuildCustom();render();
+  delete DB.hidden[t.dataset.k];touchReg();save();rebuildCustom();render();
 };
 ACT.parentoff=function(){S.parent=false;S.confirm=null;S.pmsg=null;render();};
 
@@ -1188,28 +1241,33 @@ function backupText(){
   var o={app:'deutsch-igi',v:1,players:DB.players,custom:DB.custom||[],hidden:DB.hidden||{},dir:DB.dir,rate:DB.rate,voice:DB.voice,sound:DB.sound};
   return JSON.stringify(o);
 }
+function mergePlayer(q){
+  if(!q||!q.id||!q.name)return false;
+  var p=null,ch=false;
+  DB.players.forEach(function(x){if(x.id===q.id)p=x;});
+  if(!p){
+    DB.players.push({id:q.id,name:String(q.name).slice(0,14),color:q.color||COLORS[0],stars:q.stars||0,xp:q.xp||0,streak:q.streak||0,last:q.last||0,words:q.words||{}});
+    return true;
+  }
+  var st=Math.max(p.stars||0,q.stars||0),xp=Math.max(p.xp||0,q.xp||0);
+  if(st!==p.stars||xp!==p.xp){p.stars=st;p.xp=xp;ch=true;}
+  if((q.last||0)>(p.last||0)||((q.last||0)===(p.last||0)&&(q.streak||0)>(p.streak||0))){p.last=q.last||0;p.streak=q.streak||0;ch=true;}
+  p.words=p.words||{};
+  Object.keys(q.words||{}).forEach(function(k){var a=p.words[k],b=q.words[k];if(b&&(!a||b.b>a.b||(b.b===a.b&&b.d>a.d))){p.words[k]=b;ch=true;}});
+  return ch;
+}
 function importBackup(txt){
   var o;
   try{o=JSON.parse(txt);}catch(e){return 'Texte illisible : copie la sauvegarde en entier.';}
   if(!o||o.app!=='deutsch-igi'||!Array.isArray(o.players))return 'Ce texte n’est pas une sauvegarde de l’appli.';
-  var n=0;
-  o.players.forEach(function(q){
-    if(!q||!q.id||!q.name)return;
-    var p=null;
-    DB.players.forEach(function(x){if(x.id===q.id)p=x;});
-    if(!p){q.words=q.words||{};DB.players.push(q);n++;return;}
-    p.stars=Math.max(p.stars||0,q.stars||0);p.xp=Math.max(p.xp||0,q.xp||0);
-    if((q.last||0)>=(p.last||0)){p.last=q.last||0;p.streak=q.streak||0;}
-    p.words=p.words||{};
-    Object.keys(q.words||{}).forEach(function(k){var a=p.words[k],b=q.words[k];if(!a||(b&&b.b>a.b))p.words[k]=b;});
-  });
+  o.players.forEach(function(q){mergePlayer(q);});
   DB.custom=DB.custom||[];
   var ids={};DB.custom.forEach(function(c){ids[c.id]=1;});
   (o.custom||[]).forEach(function(c){if(c&&c.id&&c.w&&c.f&&!ids[c.id]){DB.custom.push(c);ids[c.id]=1;}});
   DB.hidden=DB.hidden||{};
   Object.keys(o.hidden||{}).forEach(function(k){DB.hidden[k]=o.hidden[k];});
   if(!me()&&DB.players.length===1)DB.cur=DB.players[0].id;
-  migrateCustom();save();rebuildCustom();
+  touchReg();migrateCustom();save();rebuildCustom();
   return 'Sauvegarde restaurée ('+o.players.length+' joueur'+(o.players.length>1?'s':'')+').';
 }
 ACT.bkmake=function(){
@@ -1231,6 +1289,66 @@ ACT.bkrest=function(){
   S.bkmsg=importBackup(ta.value||'');S.bk=null;render();
 };
 
+/* ===== synchronisation (Firebase) : l'appli marche seule, le nuage s'ajoute si disponible ===== */
+var CL={ready:false,off:false,user:null,status:'',err:''};
+var EDITORS=['sitraka.ramaniraka@gmail.com','aurore.dessonnaz@gmail.com'];
+function isEditor(){return !!(CL.user&&CL.user.email&&CL.user.verified&&EDITORS.indexOf(CL.user.email.toLowerCase())>=0);}
+function genFam(){var al='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r='IGI-',i;for(i=0;i<8;i++){r+=al.charAt(Math.floor(Math.random()*al.length));if(i===3)r+='-';}return r;}
+window.IGI_APP={
+  DB:function(){return DB;},
+  fam:function(){return DB.fam||null;},
+  setFam:function(c){DB.fam=c;lsSet(JSON.stringify(DB));},
+  setCloud:function(p){for(var k in p)CL[k]=p[k];softRender();},
+  setFsWords:setFsWords,
+  payload:function(p){return {name:p.name,color:p.color,stars:p.stars||0,xp:p.xp||0,streak:p.streak||0,last:p.last||0,words:p.words||{}};},
+  mergePlayer:mergePlayer,
+  afterMerge:function(){if(!me()&&DB.players.length===1)DB.cur=DB.players[0].id;lsSet(JSON.stringify(DB));rebuildCustom();softRender();},
+  removePlayer:function(id){
+    var had=DB.players.some(function(p){return p.id===id;});if(!had)return;
+    DB.players=DB.players.filter(function(p){return p.id!==id;});
+    if(DB.cur===id){DB.cur=DB.players.length===1?DB.players[0].id:null;}
+    lsSet(JSON.stringify(DB));rebuildCustom();
+    if(!me()&&S.screen!=='profiles')go('profiles');else softRender();
+  },
+  getReg:function(){return {hidden:DB.hidden||{},custom:DB.custom||[],upd:DB.rupd||0};},
+  applyReg:function(r,union){
+    r=r||{};
+    if(union){
+      DB.custom=DB.custom||[];DB.hidden=DB.hidden||{};
+      var ids={};DB.custom.forEach(function(c){ids[c.id]=1;});
+      (r.custom||[]).forEach(function(c){if(c&&c.id&&c.w&&c.f&&!ids[c.id]){DB.custom.push(c);ids[c.id]=1;}});
+      Object.keys(r.hidden||{}).forEach(function(k){DB.hidden[k]=r.hidden[k];});
+      touchReg();lsSet(JSON.stringify(DB));rebuildCustom();softRender();return 'push';
+    }
+    var loc=DB.rupd||0,up=r.upd||0;
+    if(up>loc){DB.hidden=r.hidden||{};DB.custom=r.custom||[];DB.rupd=up;lsSet(JSON.stringify(DB));rebuildCustom();softRender();return 'adopted';}
+    if(loc>up)return 'push';
+    return 'same';
+  }
+};
+ACT.famcreate=function(){S.fmsg='Création du code…';render();if(window.IGI_CLOUD)window.IGI_CLOUD.joinFamily(genFam(),true).then(function(r){S.fmsg=r.ok?'Code créé. Note-le : il faut le saisir sur chaque autre appareil.':r.err;render();});};
+ACT.famjoin=function(){
+  var el=document.getElementById('famin'),c=(el&&el.value||'').toUpperCase().replace(/\s+/g,'');
+  if(!/^[A-Z0-9-]{8,40}$/.test(c)){S.fmsg='Code invalide : il ressemble à IGI-ABCD-EFGH.';render();return;}
+  S.fmsg='Connexion…';render();
+  if(window.IGI_CLOUD)window.IGI_CLOUD.joinFamily(c,false).then(function(r){S.fmsg=r.ok?'Appareil relié. Les joueurs et les progrès se synchronisent.':r.err;render();});
+};
+ACT.famleave=function(){if(window.IGI_CLOUD)window.IGI_CLOUD.leaveFamily();S.fmsg='Synchronisation arrêtée sur cet appareil. Les données locales restent.';render();};
+ACT.gsign=function(){CL.err='';if(window.IGI_CLOUD)window.IGI_CLOUD.google();};
+ACT.gout=function(){if(window.IGI_CLOUD)window.IGI_CLOUD.signOut();};
+ACT.fsquick=function(){
+  var ta=document.getElementById('fsq');if(!ta||!window.IGI_CLOUD)return;
+  var list=parseShared(ta.value||''),bad=(ta.value||'').split(/\r?\n/).filter(function(l){l=l.trim();return l&&l.charAt(0)!=='#';}).length-list.length;
+  if(!list.length){S.fmsg='Aucune ligne valide. Format : monde | der Hund = le chien = Hunde = 🐶';render();return;}
+  Promise.all(list.map(function(c){return window.IGI_CLOUD.addWord(c);})).then(function(){S.fmsg=list.length+' mot'+(list.length>1?'s':'')+' ajouté'+(list.length>1?'s':'')+' pour tous.'+(bad>0?' '+bad+' ligne(s) ignorée(s).':'');ta.value='';render();}).catch(function(){S.fmsg='Échec de l’ajout : vérifie ta connexion.';render();});
+};
+ACT.fdel=function(t){
+  var k=t.dataset.k,x=WBYK[k];if(!isEditor()||!x||!x.fid)return;
+  if(S.confirm!==k){S.confirm=k;render();return;}
+  S.confirm=null;
+  if(window.IGI_CLOUD)window.IGI_CLOUD.delWord(x.fid).then(function(){S.fmsg='Mot supprimé pour tous.';render();}).catch(function(){S.fmsg='Suppression refusée.';render();});
+};
+
 /* réglages */
 ACT.test=function(){speak('Guten Tag! Ich bin Igi. Wir lernen zusammen Deutsch.');};
 ACT.snd=function(){DB.sound=!DB.sound;save();render();if(DB.sound)sfx.ok();};
@@ -1238,6 +1356,7 @@ ACT.delp=function(){S.cd=true;render();};
 ACT.delc=function(){S.cd=false;render();};
 ACT.delp2=function(){
   var id=DB.cur;
+  try{if(window.IGI_CLOUD&&DB.fam)window.IGI_CLOUD.delPlayer(id);}catch(e){}
   DB.players=DB.players.filter(function(p){return p.id!==id;});
   DB.cur=null;S.cd=false;save();
   if(DB.players.length===1)DB.cur=DB.players[0].id;
@@ -1268,6 +1387,13 @@ app.addEventListener('submit',function(e){
   e.preventDefault();
   var fm=e.target.getAttribute('data-form');
   if(fm==='addw'){addWordFromForm();return;}
+  if(fm==='fsword'){
+    var g=function(i){return (document.getElementById(i).value||'').trim();};
+    if(!isEditor()||!window.IGI_CLOUD||!g('fsd')||!g('fsf'))return;
+    var em=cleanEmo(g('fse')),nm=g('fsd');
+    window.IGI_CLOUD.addWord({wid:g('fsw'),a:g('fsa'),w:nm,f:g('fsf'),p:g('fsp').replace(/^die\s+/i,''),e:em}).then(function(){S.fmsg='Mot « '+nm+' » ajouté pour tous.';render();}).catch(function(){S.fmsg='Ajout refusé : vérifie ta connexion et ton compte.';render();});
+    return;
+  }
   if(fm==='pin'||fm==='pinin'){
     var pv=(document.getElementById(fm==='pin'?'pin1':'pin2').value||'').trim();
     if(!/^\d{4}$/.test(pv)){S.pmsg='Le code doit avoir 4 chiffres.';render();return;}
@@ -1314,5 +1440,108 @@ loadShared();
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
 S.screen=(me()&&DB.players.length===1)?'home':'profiles';
 render();
+})();
+</script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInAnonymously,GoogleAuthProvider,signInWithPopup,signOut} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDocs,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+(function(){
+  var A=window.IGI_APP;if(!A)return;
+  var cfg={apiKey:"AIzaSyBPUsi4TXP9ieWraTsCULK8JGKln7I_Np0",authDomain:"deutsch-igi.firebaseapp.com",projectId:"deutsch-igi",storageBucket:"deutsch-igi.firebasestorage.app",messagingSenderId:"1040717364256",appId:"1:1040717364256:web:d424d91419d4c2ef421045"};
+  var app,auth,db;
+  try{
+    app=initializeApp(cfg);auth=getAuth(app);
+    db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+  }catch(e){A.setCloud({ready:false,off:true});return;}
+  var unsubW=null,unsubP=null,unsubR=null,pendingUnion=false,lastPushed={},regLast='',timer=null;
+  function famCol(code){return collection(db,'familles',code,'joueurs');}
+  function regDoc(code){return doc(db,'familles',code,'reglages','main');}
+  function pushPlayers(){
+    var code=A.fam();if(!code||!auth.currentUser)return;
+    A.DB().players.forEach(function(p){
+      var pl=A.payload(p),s=JSON.stringify(pl);
+      if(lastPushed[p.id]===s)return;
+      setDoc(doc(db,'familles',code,'joueurs',p.id),pl).then(function(){lastPushed[p.id]=s;}).catch(function(){});
+    });
+  }
+  function pushReg(force){
+    var code=A.fam();if(!code||!auth.currentUser)return;
+    var r=A.getReg(),s=JSON.stringify(r);
+    if(!force&&s===regLast)return;
+    setDoc(regDoc(code),r).then(function(){regLast=s;}).catch(function(){});
+  }
+  function startWords(){
+    if(unsubW){unsubW();unsubW=null;}
+    unsubW=onSnapshot(collection(db,'mots'),function(snap){
+      var l=[];snap.forEach(function(d){var o=d.data();o.fid=d.id;l.push(o);});
+      A.setFsWords(l);
+    },function(){});
+  }
+  function stopFamily(){
+    if(unsubP){unsubP();unsubP=null;}
+    if(unsubR){unsubR();unsubR=null;}
+  }
+  function startFamily(){
+    stopFamily();
+    var code=A.fam();if(!code)return;
+    unsubP=onSnapshot(famCol(code),function(snap){
+      snap.docChanges().forEach(function(ch){
+        var id=ch.doc.id;
+        if(ch.type==='removed'){A.removePlayer(id);return;}
+        var d=ch.doc.data();
+        lastPushed[id]=JSON.stringify({name:d.name,color:d.color,stars:d.stars||0,xp:d.xp||0,streak:d.streak||0,last:d.last||0,words:d.words||{}});
+        var o=Object.assign({id:id},d);
+        A.mergePlayer(o);
+      });
+      A.afterMerge();
+      pushPlayers();
+      A.setCloud({status:'Synchronisé'});
+    },function(){A.setCloud({status:'Hors ligne'});});
+    unsubR=onSnapshot(regDoc(code),function(s){
+      var res;
+      if(s.exists()){res=A.applyReg(s.data(),pendingUnion);}
+      else res=(pendingUnion||A.getReg().upd)?'push':'same';
+      pendingUnion=false;
+      if(res==='push')pushReg(true);
+      else regLast=JSON.stringify(A.getReg());
+    },function(){});
+  }
+  onAuthStateChanged(auth,function(u){
+    if(!u){signInAnonymously(auth).catch(function(){A.setCloud({ready:false,off:true});});return;}
+    A.setCloud({ready:true,off:false,user:{email:u.email||'',verified:!!u.emailVerified,anon:!!u.isAnonymous}});
+    startWords();startFamily();
+  });
+  window.IGI_CLOUD={
+    changed:function(){
+      if(!A.fam()||!auth.currentUser)return;
+      clearTimeout(timer);
+      timer=setTimeout(function(){pushPlayers();pushReg(false);},2500);
+    },
+    joinFamily:async function(code,create){
+      try{
+        if(!auth.currentUser)return {ok:false,err:'Service non connecté : réessaie dans un instant.'};
+        if(!create){
+          var snap=await getDocs(famCol(code));
+          if(snap.empty)return {ok:false,err:'Code inconnu : vérifie-le, ou crée un nouveau code sur le premier appareil.'};
+        }
+        A.setFam(code);lastPushed={};regLast='';pendingUnion=true;
+        startFamily();pushPlayers();
+        return {ok:true};
+      }catch(e){return {ok:false,err:'Impossible de se connecter pour le moment.'};}
+    },
+    leaveFamily:function(){stopFamily();A.setFam(null);lastPushed={};regLast='';A.setCloud({status:''});},
+    delPlayer:function(id){var code=A.fam();if(code&&auth.currentUser)deleteDoc(doc(db,'familles',code,'joueurs',id)).catch(function(){});delete lastPushed[id];},
+    google:function(){
+      signInWithPopup(auth,new GoogleAuthProvider()).catch(function(e){A.setCloud({err:'Connexion Google impossible ('+(e&&e.code?e.code:'erreur')+').'});});
+    },
+    signOut:function(){signOut(auth).catch(function(){});},
+    addWord:function(o){
+      var u=auth.currentUser;
+      return setDoc(doc(collection(db,'mots')),{wid:o.wid,a:o.a||'',w:o.w,f:o.f,e:o.e||'',p:o.p||'',by:(u&&u.email)||'',t:Date.now()});
+    },
+    delWord:function(fid){return deleteDoc(doc(db,'mots',fid));}
+  };
 })();
 </script>
