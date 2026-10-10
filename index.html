@@ -538,10 +538,10 @@ function dailyWords(n){
 }
 
 /* ================= voix ================= */
-var TTS={ok:(typeof speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'),voices:[],id:0,ready:false};
+var TTS={ok:(typeof speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'),voices:[],fr:[],id:0,ready:false};
 function loadVoices(){
   if(!TTS.ok)return;
-  try{TTS.voices=speechSynthesis.getVoices().filter(function(v){return /^de([-_]|$)/i.test(v.lang);});}catch(e){TTS.voices=[];}
+  try{var all=speechSynthesis.getVoices();TTS.voices=all.filter(function(v){return /^de([-_]|$)/i.test(v.lang);});TTS.fr=all.filter(function(v){return /^fr([-_]|$)/i.test(v.lang);});}catch(e){TTS.voices=[];TTS.fr=[];}
 }
 function bestVoice(){
   var i;
@@ -551,14 +551,20 @@ function bestVoice(){
   function score(v){return (/de[-_]DE/i.test(v.lang)?5:0)+(/natural|neural|premium|enhanced|online/i.test(v.name)?4:0)+(MALE.test(v.name)?7:0)-(FEMALE.test(v.name)&&!MALE.test(v.name)?3:0);}
   return TTS.voices.slice().sort(function(a,b){return score(b)-score(a);})[0]||null;
 }
+function frVoice(){
+  var MALE=/thomas|paul|henri|claude|antoine|remy|rémy|nicolas|mathieu|male|masculin/i;
+  var FEMALE=/amelie|amélie|denise|julie|hortense|marie|female|féminin|google/i;
+  function score(v){return (/fr[-_]FR/i.test(v.lang)?5:0)+(/natural|neural|premium|enhanced|online/i.test(v.name)?4:0)+(MALE.test(v.name)?7:0)-(FEMALE.test(v.name)&&!MALE.test(v.name)?3:0);}
+  return TTS.fr.slice().sort(function(a,b){return score(b)-score(a);})[0]||null;
+}
 function speak(text,o){
   o=o||{};
   if(!TTS.ok||!text)return;
   try{
     speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(text);
-    var v=bestVoice();
-    u.lang='de-DE';
+    var fr=(o.lang==='fr'),v=fr?frVoice():bestVoice();
+    u.lang=fr?'fr-FR':'de-DE';
     if(v){u.voice=v;u.lang=v.lang;}
     u.rate=o.slow?Math.max(0.4,DB.rate*0.62):DB.rate;
     u.pitch=1;
@@ -814,8 +820,7 @@ VIEWS.memory=function(){
 VIEWS.letters=function(){
   var L=S.lt,x=L.list[L.i],n=x.w.length,hear=(L.mode==='hear'),h=gameTop(L.i+(L.done?1:0),L.list.length);
   h+='<div class="stage"><div class="prompt">'+picHTML(x);
-  if(hear&&!L.done)h+='<button class="bigspk" data-act="hear" aria-label="Écouter le mot">'+ICON.spk+'</button><p class="hint">Écoute le mot, puis écris-le en allemand</p>';
-  else h+='<p class="frsm">'+esc(x.f)+'</p><button class="btn small ghost" data-act="hear">'+ICON.spk+' Écouter</button><p class="hint">'+(L.done?'Bravo !':'Écris ce mot en allemand')+'</p>';
+  h+='<p class="frsm">'+esc(x.f)+'</p><button class="btn small ghost" data-act="hearfr" aria-label="Écouter le mot en français">'+ICON.spk+' Écouter</button><p class="hint">'+(L.done?'Bravo !':'Écris ce mot en allemand')+'</p>';
   h+='</div><div class="slotrow">'+(x.a?'<span class="art '+x.a+'" style="font-size:1.2rem">'+x.a+'</span>':'')+'<div class="slots'+(L.done?' good':'')+'">';
   for(var i=0;i<n;i++){
     var id=L.fill[i],has=(id!==null&&id!==undefined),wr=L.bad&&L.wrong.indexOf(i)>=0;
@@ -824,7 +829,7 @@ VIEWS.letters=function(){
   }
   h+='</div></div>';
   if(L.done){
-    h+='<div class="fb ok">'+igi('cheer',64)+'<div class="fbt"><p class="de">'+esc(L.msg.de)+'</p><p><b>'+esc(say(x))+'</b> = '+esc(x.f)+'</p></div><button class="btn alt" data-act="lnextw">Weiter</button></div>';
+    h+='<div class="fb ok">'+igi('cheer',64)+'<div class="fbt"><p class="de">'+esc(L.msg.de)+'</p><p><b>'+esc(say(x))+'</b> = '+esc(x.f)+' <button class="btn small ghost icon" data-act="hear" aria-label="Écouter en allemand">'+ICON.spk+'</button></p></div><button class="btn alt" data-act="lnextw">Weiter</button></div>';
   }else{
     if(L.bad)h+='<div class="fb bad">'+igi('sad',64)+'<div class="fbt"><p class="de">Fast!</p><p>Presque ! Les lettres <b>rouges ✗</b> ne sont pas à la bonne place. Les vertes sont justes, elles restent.</p></div></div>';
     h+='<div class="tiles">';
@@ -917,7 +922,7 @@ function setupLetter(){
   L.tiles=cs;L.fill=[];L.lock=[];
   for(var i=0;i<n;i++){L.fill.push(null);L.lock.push(false);}
   L.mist=0;L.hint=0;L.done=false;L.bad=false;L.wrong=[];L.msg=null;
-  L.mode=d==='de'?'hear':d==='fr'?'read':(Math.random()<0.5?'hear':'read');
+  L.mode='read';
 }
 function startLetters(wid){
   var w=WORLD[wid],el=w.words.filter(function(x){return /^[A-Za-zÄÖÜäöüß]{3,12}$/.test(x.w);});
@@ -981,6 +986,7 @@ ACT.lnext=function(){
 };
 
 /* quiz */
+ACT.hearfr=function(){if(S.screen==='letters'){var x=S.lt.list[S.lt.i];if(x)speak(x.f,{lang:'fr'});}};
 ACT.hear=function(){
   if(S.screen==='quiz')speak(say(S.q.qs[S.q.i].w));
   else if(S.screen==='letters')speak(say(S.lt.list[S.lt.i]));
