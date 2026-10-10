@@ -742,6 +742,11 @@ VIEWS.profiles=function(){
   h+='<div class="swatches" role="radiogroup" aria-label="Couleur">';
   COLORS.forEach(function(c,i){h+='<label class="sw"><input type="radio" name="pc" id="pc'+i+'" value="'+c+'"'+(c===first?' checked':'')+' aria-label="Couleur '+(i+1)+'"><span style="background:'+c+'"></span></label>';});
   h+='</div><button class="btn alt" type="submit">C’est parti !</button></form>';
+  if(!DB.fam&&CL.ready){
+    h+='<section class="panel" style="width:100%"><h2>Déjà un code famille ?</h2>';
+    if(S.fmsg)h+='<p class="flashmsg" role="status">'+esc(S.fmsg)+'</p>';
+    h+='<label for="famin">Retrouve tes joueurs sur cet appareil</label><input id="famin" type="text" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="IGI-ABCD-EFGH"><button class="btn small" data-act="famjoin">Rejoindre cette famille</button></section>';
+  }else if(DB.fam&&S.fmsg)h+='<p class="flashmsg" role="status" style="width:100%">'+esc(S.fmsg)+'</p>';
   if(me())h+='<button class="btn ghost small" data-act="home">Retour</button>';
   return h+'</section>';
 };
