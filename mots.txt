@@ -4,4 +4,3 @@
 # Pluriel et emoji facultatifs. Les lignes qui commencent par # sont ignorées.
 # Exemple (retire le # pour l'activer) :
 # tiere | der Fuchs = le renard = Füchse = 🦊
-tiere | der Fuchs = le renard = Füchse = 🦊
