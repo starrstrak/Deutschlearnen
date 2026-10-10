@@ -501,16 +501,15 @@ function migrateCustom(){
   save();
 }
 function rebuildCustom(){
-  var p=me();
+  var p=me(),hid=DB.hidden||{};
   WORLDS.forEach(function(w){
-    w.words=w.words.filter(function(x){
-      if(!x.cu)return true;
-      delete WBYK[x.k];var i=ALL.indexOf(x);if(i>=0)ALL.splice(i,1);
-      return false;
-    });
+    if(!w._base)w._base=w.words.filter(function(x){return !x.cu;});
+    w.words.forEach(function(x){if(x.cu)delete WBYK[x.k];});
+    w.words=w._base.filter(function(x){return !hid[x.k];});
   });
+  ALL.length=0;WORLDS.forEach(function(w){w.words.forEach(function(x){ALL.push(x);});});
   SHARED.forEach(function(c){
-    var w=WORLD[c.wid];if(!w)return;
+    var w=WORLD[c.wid];if(!w||hid['shared:'+c.id])return;
     if(w.words.some(function(y){return !y.cu&&y.w.toLowerCase()===c.w.toLowerCase();}))return;
     var x={k:'shared:'+c.id,world:w.id,a:c.a,w:c.w,f:c.f,e:c.e,p:c.p,s:'',cu:true,sh:true};
     w.words.push(x);WBYK[x.k]=x;ALL.push(x);
@@ -748,7 +747,7 @@ function customForms(w,msg){
   h+='<label for="cwp">Pluriel, pour information (facultatif)</label><input id="cwp" type="text" maxlength="30" autocomplete="off" autocapitalize="off" placeholder="Häuser">';
   h+='<label for="cwe">Image : un emoji (facultatif)</label><input id="cwe" type="text" maxlength="12" autocomplete="off" placeholder="🏠">';
   h+='<button class="btn alt" type="submit">Ajouter le mot</button></form>';
-  h+='<p class="hint">Le pluriel est donné à titre d’information : il n’est jamais demandé dans les jeux. Ces mots sont lus par la même voix que le reste de l’appli. Tu peux les supprimer avec ✕.</p></section>';
+  h+='<p class="hint">Le pluriel est donné à titre d’information : il n’est jamais demandé dans les jeux. Ces mots sont lus par la même voix que le reste de l’appli.</p></section>';
   h+='<section class="panel"><h2>Ajout rapide</h2><label for="cwq">Un mot par ligne : allemand = français = pluriel (article et pluriel facultatifs)</label><textarea id="cwq" rows="5" placeholder="das Haus = la maison = Häuser&#10;gehen = aller"></textarea><button class="btn" data-act="addq">Ajouter la liste</button></section>';
   if(!w.custom)h+='<button class="btn small ghost" data-act="toggleadd">Fermer</button>';
   return h;
@@ -768,7 +767,7 @@ VIEWS.world=function(){
       var s=p.words[x.k],b=s?s.b:0,pips='';
       for(var i=1;i<=4;i++)pips+='<i'+(b>=i?' class="on"':'')+'></i>';
       var pl=x.p?(x.p==='-'?' · pas de pluriel':' · pluriel : die '+esc(x.p)):'';
-      h+='<div class="wrow"><button class="wsay" data-act="say" data-k="'+esc(x.k)+'"><span class="re'+(isNum(x)?' num':'')+'">'+(x.e||'🔤')+'</span><span class="rw"><b>'+wordHTML(x)+'</b><span>'+esc(x.f)+pl+'</span></span><span class="pips" title="Niveau du mot">'+pips+'</span></button>'+(x.cu&&!x.sh?'<button class="btn small ghost icon del" data-act="delw" data-k="'+esc(x.k)+'" aria-label="Supprimer '+esc(x.w)+'">✕</button>':'')+'</div>';
+      h+='<div class="wrow"><button class="wsay" data-act="say" data-k="'+esc(x.k)+'"><span class="re'+(isNum(x)?' num':'')+'">'+(x.e||'🔤')+'</span><span class="rw"><b>'+wordHTML(x)+'</b><span>'+esc(x.f)+pl+'</span></span><span class="pips" title="Niveau du mot">'+pips+'</span></button>'+(S.parent?'<button class="btn small '+(S.confirm===x.k?'':'ghost ')+'icon del"'+(S.confirm===x.k?' style="background:var(--bad);color:#fff"':'')+' data-act="delw" data-k="'+esc(x.k)+'" aria-label="Supprimer '+esc(x.w)+'">'+(S.confirm===x.k?'Sûr ?':'✕')+'</button>':'')+'</div>';
     });
     h+='</div>';
   }
@@ -887,6 +886,16 @@ VIEWS.settings=function(){
   h+='<label for="rateRng">Vitesse de la voix : <b id="rateVal">'+DB.rate.toFixed(2)+'</b></label><input id="rateRng" type="range" min="0.5" max="1.1" step="0.05" value="'+DB.rate+'">';
   h+='<button class="btn small" data-act="test">'+ICON.spk+' Tester la voix</button></section>';
   h+='<section class="panel"><h2>Sons</h2><button class="switch" data-act="snd" aria-pressed="'+(DB.sound?'true':'false')+'"><span>Bruitages de jeu</span><span class="pill"></span></button></section>';
+  h+='<section class="panel"><h2>Mode parent</h2>';
+  if(S.pmsg)h+='<p class="warn" role="status">'+esc(S.pmsg)+'</p>';
+  if(!DB.pin)h+='<p class="hint">Pour supprimer ou masquer des mots, crée un code à 4 chiffres. Les enfants ne verront pas les boutons ✕.</p><form data-form="pin" style="display:grid;gap:10px"><label for="pin1">Nouveau code (4 chiffres)</label><input id="pin1" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required><button class="btn small alt" type="submit">Créer le code</button></form>';
+  else if(!S.parent)h+='<form data-form="pinin" style="display:grid;gap:10px"><label for="pin2">Code parent</label><input id="pin2" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required><button class="btn small alt" type="submit">Activer le mode parent</button></form>';
+  else{
+    h+='<p class="hint">Mode parent actif : un bouton ✕ apparaît sur chaque mot dans les mondes (touche deux fois pour confirmer). Les mots ajoutés dans l’appli sont supprimés ; les mots de départ et ceux de la liste partagée sont masqués sur cet appareil.</p><button class="btn small ghost" data-act="parentoff">Quitter le mode parent</button>';
+    var hk=Object.keys(DB.hidden||{});
+    if(hk.length){h+='<h3 style="margin:14px 0 6px">Mots masqués</h3><div class="rows">';hk.forEach(function(k){h+='<div class="wrow"><span class="rw"><b>'+esc(DB.hidden[k])+'</b></span><button class="btn small ghost" data-act="unhide" data-k="'+esc(k)+'">Remettre</button></div>';});h+='</div>';}
+  }
+  h+='</section>';
   h+='<section class="panel"><h2>Joueur : '+esc(p.name)+'</h2><button class="btn small ghost" data-act="who">Changer de joueur</button>';
   if(S.cd)h+='<p class="warn">Supprimer '+esc(p.name)+' et toute sa progression ?</p><div class="row"><button class="btn small" style="background:var(--bad)" data-act="delp2">Oui, supprimer</button><button class="btn small ghost" data-act="delc">Non</button></div>';
   else h+='<button class="btn small ghost" data-act="delp">Supprimer ce joueur</button>';
@@ -1155,11 +1164,20 @@ ACT.addq=function(){
   rebuildCustom();save();render();
 };
 ACT.delw=function(t){
-  var k=t.dataset.k,p=me();if(!p)return;
-  DB.custom=(DB.custom||[]).filter(function(c){return 'perso:'+c.id!==k;});
-  delete p.words[k];
+  var k=t.dataset.k,p=me();if(!p||!S.parent)return;
+  if(S.confirm!==k){S.confirm=k;render();return;}
+  S.confirm=null;
+  var x=WBYK[k];
+  if(k.indexOf('perso:')===0)DB.custom=(DB.custom||[]).filter(function(c){return 'perso:'+c.id!==k;});
+  else{DB.hidden=DB.hidden||{};DB.hidden[k]=x?x.w:k;}
+  DB.players.forEach(function(q){delete q.words[k];});
   save();rebuildCustom();render();
 };
+ACT.unhide=function(t){
+  if(!S.parent||!DB.hidden)return;
+  delete DB.hidden[t.dataset.k];save();rebuildCustom();render();
+};
+ACT.parentoff=function(){S.parent=false;S.confirm=null;S.pmsg=null;render();};
 
 /* réglages */
 ACT.test=function(){speak('Guten Tag! Ich bin Igi. Wir lernen zusammen Deutsch.');};
@@ -1198,6 +1216,14 @@ app.addEventListener('submit',function(e){
   e.preventDefault();
   var fm=e.target.getAttribute('data-form');
   if(fm==='addw'){addWordFromForm();return;}
+  if(fm==='pin'||fm==='pinin'){
+    var pv=(document.getElementById(fm==='pin'?'pin1':'pin2').value||'').trim();
+    if(!/^\d{4}$/.test(pv)){S.pmsg='Le code doit avoir 4 chiffres.';render();return;}
+    if(fm==='pin'){DB.pin=pv;S.parent=true;S.pmsg='Code créé. Mode parent actif.';save();}
+    else if(pv===DB.pin){S.parent=true;S.pmsg=null;}
+    else{S.pmsg='Code incorrect.';}
+    render();return;
+  }
   if(fm!=='addp')return;
   var inp=document.getElementById('pname'),name=(inp.value||'').trim();
   if(!name)return;
