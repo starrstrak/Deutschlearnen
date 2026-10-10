@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ajouter des mots</title>
+<style>
+:root{--bg:#fffaf0;--fg:#1f2430;--card:#fff;--line:#1f2430;--pri:#4457ff}
+@media(prefers-color-scheme:dark){:root{--bg:#161a26;--fg:#f2f4fa;--card:#232a3d;--line:#f2f4fa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;padding:16px;max-width:640px;margin-inline:auto}
+h1{font-size:1.4rem}label{display:block;font-weight:600;margin:12px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
+button,a.btn{font:inherit;font-weight:700;padding:10px 18px;border:2px solid var(--line);border-radius:999px;background:var(--pri);color:#fff;cursor:pointer;text-decoration:none;display:inline-block;margin:8px 8px 0 0}
+.row{display:grid;grid-template-columns:110px 1fr;gap:10px}
+textarea{min-height:140px;font-family:ui-monospace,monospace}
+.ok{color:#0a7d3c;font-weight:600}
+</style></head><body>
+<h1>Ajouter des mots à l’appli</h1>
+<p>1. Remplis le mot, clique <b>Ajouter à la liste</b> (répète pour plusieurs mots). 2. Copie la liste. 3. Colle-la à la fin de <code>mots.txt</code> sur GitHub, puis <b>Commit changes</b>. Les mots apparaissent chez tous en 1 à 2 minutes.</p>
+<form id="f">
+<label for="m">Monde</label>
+<select id="m">
+<option value="gruss">👋 Grüße (salutations)</option><option value="tiere">🐶 Tiere (animaux)</option><option value="farben">🎨 Farben (couleurs)</option><option value="zahlen">🔢 Zahlen (nombres)</option><option value="essen">🍎 Essen (manger)</option><option value="familie">👨‍👩‍👧 Familie</option><option value="koerper">🖐️ Körper (corps)</option><option value="kleidung">👕 Kleidung (vêtements)</option><option value="natur">🌳 Natur</option><option value="schule">🎒 Schule (école)</option><option value="fahrzeuge">🚗 Fahrzeuge (véhicules)</option><option value="perso">✏️ Meine Wörter</option>
+</select>
+<div class="row"><div><label for="a">Article</label><select id="a"><option value="">aucun</option><option>der</option><option>die</option><option>das</option></select></div>
+<div><label for="d">Mot en allemand</label><input id="d" required autocomplete="off"></div></div>
+<label for="fr">Traduction en français</label><input id="fr" required autocomplete="off">
+<label for="p">Pluriel (facultatif, ex. Häuser)</label><input id="p" autocomplete="off">
+<label for="e">Emoji (facultatif)</label><input id="e" maxlength="8" autocomplete="off">
+<button type="submit">Ajouter à la liste</button>
+</form>
+<label for="out">Ta liste (à copier dans mots.txt)</label>
+<textarea id="out" readonly></textarea>
+<button id="copy" type="button">Copier la liste</button>
+<button id="clr" type="button" style="background:#777">Vider</button>
+<p id="msg" class="ok" role="status"></p>
+<p><a class="btn" id="gh" href="#" target="_blank" rel="noopener">Ouvrir mots.txt sur GitHub</a></p>
+<script>
+(function(){
+var out=document.getElementById('out'),msg=document.getElementById('msg'),f=document.getElementById('f');
+var gh=document.getElementById('gh');
+/* à remplacer par ton compte et ton dépôt : voir le guide */
+var REPO='starrstrak/Deutschlearnen';
+gh.href='https://github.com/'+REPO+'/edit/main/mots.txt';
+f.addEventListener('submit',function(ev){
+ ev.preventDefault();
+ var g=function(i){return document.getElementById(i).value.trim();};
+ var de=(g('a')?g('a')+' ':'')+g('d');
+ if(!g('d')||!g('fr'))return;
+ var line=g('m')+' | '+de+' = '+g('fr');
+ if(g('p')||g('e'))line+=' = '+g('p');
+ if(g('e'))line+=' = '+g('e');
+ out.value+=(out.value?'\n':'')+line;
+ msg.textContent='Ajouté : '+de;
+ ['d','fr','p','e'].forEach(function(i){document.getElementById(i).value='';});
+ document.getElementById('d').focus();
+});
+document.getElementById('copy').addEventListener('click',function(){
+ out.select();
+ try{navigator.clipboard.writeText(out.value).then(function(){msg.textContent='Copié.';});}catch(e){document.execCommand('copy');msg.textContent='Copié.';}
+});
+document.getElementById('clr').addEventListener('click',function(){out.value='';msg.textContent='';});
+})();
+</script></body></html>

@@ -1,0 +1,6 @@
+# Mots partagés : visibles par tous les utilisateurs de l'appli.
+# Une ligne par mot :  monde | article mot = français = pluriel = emoji
+# Mondes : gruss, tiere, farben, zahlen, essen, familie, koerper, kleidung, natur, schule, fahrzeuge, perso
+# Pluriel et emoji facultatifs. Les lignes qui commencent par # sont ignorées.
+# Exemple (retire le # pour l'activer) :
+# tiere | der Fuchs = le renard = Füchse = 🦊
