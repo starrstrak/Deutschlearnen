@@ -274,6 +274,36 @@ button:disabled{cursor:default}
   .acts{gap:12px}
   .top .who span.nm{max-width:7ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+/* récompenses */
+.rw{margin-top:14px;justify-content:center}
+.goal{display:grid;gap:6px;margin:0 0 14px;padding:10px 14px;background:var(--surface);border:3px solid var(--line);border-radius:18px}
+.goal .row{justify-content:space-between}
+.newsp ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.newtro{margin:0;padding:8px 14px;border:3px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--sun) 40%,var(--surface))}
+.ipet{position:absolute;right:-6%;bottom:0;line-height:1}
+.igi{position:relative}
+.hero[class*="th-"],.igistage{border-radius:24px}
+.igistage{display:grid;place-items:center;padding:12px;border:3px solid var(--line);background:var(--surface);margin-bottom:12px}
+.th-sunset{background:linear-gradient(#FFB36B,#FF6FA3)}.th-night{background:linear-gradient(#1B2150,#4B3F9E)}.th-forest{background:linear-gradient(#BFEFA8,#4E9B6B)}.th-sea{background:linear-gradient(#BDEBFF,#3E8FD1)}.th-candy{background:linear-gradient(#FFD1E8,#C9B8FF)}
+.hero[class*="th-"]:not(.th-none){padding:10px 14px;border:3px solid var(--line)}
+.tlist{display:grid;gap:10px}
+.trophy{display:flex;gap:12px;align-items:center;padding:10px 14px;background:var(--surface);border:3px solid var(--line);border-radius:18px;opacity:.75}
+.trophy.got{opacity:1;box-shadow:0 4px 0 var(--line)}
+.trophy .te{font-size:2rem;filter:grayscale(1);flex:none}
+.trophy.got .te{filter:none}
+.trophy b{display:block;font-family:var(--fd);font-weight:400;font-size:1.15rem}
+.trophy small{display:block;color:var(--muted)}
+.trophy .tt{font-size:.85rem}
+.trophy>div{flex:1;min-width:0;display:grid;gap:3px}
+.trophy.t2.got{background:color-mix(in srgb,var(--sky) 22%,var(--surface))}.trophy.t3.got{background:color-mix(in srgb,var(--sun) 40%,var(--surface))}.trophy.t4.got{background:color-mix(in srgb,var(--die) 22%,var(--surface))}
+.shopg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.si{display:grid;gap:2px;justify-items:center;text-align:center;padding:10px 6px;background:var(--surface);border:3px solid var(--line);border-radius:18px;min-height:44px}
+.si.on{background:color-mix(in srgb,var(--sun) 40%,var(--surface));box-shadow:0 4px 0 var(--line)}
+.si.lk{opacity:.7}
+.si .se{font-size:2rem;display:inline-block}
+.si .sn{font-family:var(--fd);font-size:1rem}
+.si .ss{font-size:.85rem;color:var(--muted)}
 </style>
 
 <div id="app"></div>
@@ -659,7 +689,8 @@ var ICON={
   abc:'<span style="font-family:var(--fd);font-size:1.2rem;line-height:1">Abc</span>'
 };
 
-function igi(mood,size){
+function igi(mood,size,eq){
+  var gp=(eq===false)?null:(eq||me()),gear=igiGear(gp);
   var cx=56,cy=68,n=15,start=35,span=200,step=span/n,pts=[],i,a;
   for(i=0;i<=n;i++){
     a=(start+i*step)*Math.PI/180;
@@ -675,7 +706,7 @@ function igi(mood,size){
   }else if(mood==='sad'){
     mouth='<path d="M93 92q7-7 14 0" fill="none" stroke="#1B2150" stroke-width="2.8" stroke-linecap="round"/>';
   }
-  return '<span class="igi"><svg viewBox="0 0 120 120" width="'+size+'" height="'+size+'" role="img" aria-label="Igi, le hérisson">'
+  return '<span class="igi"'+(gear.skin?' style="--igi-spike:'+gear.skin+'"':'')+'><svg viewBox="0 0 120 120" width="'+size+'" height="'+size+'" role="img" aria-label="Igi, le hérisson">'
     +'<ellipse cx="58" cy="113" rx="40" ry="4.5" fill="var(--line)" opacity=".2"/>'
     +'<polygon points="'+pts.join(' ')+'" style="fill:var(--igi-spike);stroke:var(--line)" stroke-width="3" stroke-linejoin="round"/>'
     +'<ellipse cx="56" cy="74" rx="38" ry="30" style="fill:var(--igi-spike)"/>'
@@ -687,7 +718,8 @@ function igi(mood,size){
     +'<circle cx="82" cy="85" r="4" fill="#FF8FAE" opacity=".85"/>'
     +'<circle cx="110" cy="80" r="5" fill="#1B2150"/>'
     +mouth
-    +'</svg></span>';
+    +gear.neck+gear.glasses+gear.hat
+    +'</svg>'+(gear.pet?'<span class="ipet" style="font-size:'+Math.round(size*0.3)+'px" aria-hidden="true">'+gear.pet+'</span>':'')+'</span>';
 }
 
 /* ================= briques d’affichage ================= */
@@ -706,7 +738,7 @@ function topbar(o){
   var p=me(),h='<header class="top">';
   if(o&&o.back)h+='<button class="btn small ghost icon" data-act="'+o.back+'" aria-label="Retour">'+ICON.back+'</button>';
   else h+='<button class="chip who" data-act="who"><span class="av" style="background:'+p.color+'">'+esc(p.name.charAt(0).toUpperCase())+'</span><span class="nm">'+esc(p.name)+'</span></button>';
-  h+='<div class="stats"><span class="chip" title="Jours de suite">'+ICON.flame+'<b>'+streakNow(p)+'</b></span><span class="chip" title="Étoiles">'+ICON.star('on')+'<b>'+p.stars+'</b></span><button class="btn small ghost icon" data-act="settings" aria-label="Réglages">'+ICON.gear+'</button></div></header>';
+  h+='<div class="stats"><span class="chip" title="Jours de suite">'+ICON.flame+'<b>'+streakNow(p)+'</b></span><span class="chip" title="Étoiles">'+ICON.star('on')+'<b>'+p.stars+'</b></span><span class="chip" title="Pièces">🪙<b>'+(p.coins||0)+'</b></span><button class="btn small ghost icon" data-act="settings" aria-label="Réglages">'+ICON.gear+'</button></div></header>';
   return h;
 }
 function gameTop(cur,total){
@@ -727,8 +759,224 @@ function render(){app.innerHTML=VIEWS[S.screen]();}
 /* ================= écrans ================= */
 var VIEWS={};
 
+/* ================= récompenses : pièces, trophées, boutique d’Igi (d’après le schéma Conjugo v1.3) =================
+   Règle d’or : on AJOUTE seulement. Aucun identifiant (trophée, objet) n’est jamais modifié ni supprimé.
+   Les stickers de l’album (mots appris) ne sont pas touchés. */
+var REWARDS_VERSION=1;
+var NEWS=[{v:1,t:'Du nouveau chez Igi !',l:['🪙 Tu gagnes des pièces à chaque partie, et un coffre quand l’objectif du jour est atteint.','🏆 Des trophées à débloquer : parties, séries de jours, mots appris, mondes…','🛍️ La boutique d’Igi : chapeaux, lunettes, écharpes, compagnons, décors et couleurs.','Tes stickers et tout ce que tu as déjà gagné sont conservés.']}];
+var TIER_COINS=[10,20,35,60],TIER_NAMES=['Bronze','Argent','Or','Diamant'];
+var DAILY_GOAL=20,CHEST_COINS=25;
+var STAT_KEYS=['sessions','correct','wrong','perfect','days','bestStreak','chests','early','weekend','comeback','buys'];
+var KINDS=['hat','glasses','neck','pet','theme','skin'];
+
+/* valeurs par défaut de tout champ de récompense : un ancien profil se complète tout seul */
+function fixP(p){
+  if(typeof p.coins!=='number')p.coins=0;
+  if(!p.badges||typeof p.badges!=='object')p.badges={};
+  if(!Array.isArray(p.owned))p.owned=[];
+  if(!p.equipped||typeof p.equipped!=='object')p.equipped={};
+  KINDS.forEach(function(k){if(typeof p.equipped[k]!=='string')p.equipped[k]='';});
+  if(!p.stats||typeof p.stats!=='object')p.stats={};
+  STAT_KEYS.forEach(function(k){if(typeof p.stats[k]!=='number')p.stats[k]=0;});
+  if(!p.daily||typeof p.daily!=='object')p.daily={date:0,count:0,chest:false};
+  if(typeof p.t!=='number')p.t=0;
+  return p;
+}
+
+/* ---- trophées ---- */
+var TROPHIES=[],CATS=[['play','Parties'],['acc','Bonnes réponses'],['perfect','Sans faute'],['streak','Jours de suite'],['days','Jours joués'],['lvl','Niveaux'],['stars','Étoiles'],['master','Stickers'],['seen','Mots découverts'],['world','Mondes'],['chest','Coffres'],['style','Style d’Igi'],['fun','Surprises'],['meta','Collection']];
+function series(cat,key,rows,o){
+  o=o||{};
+  rows.forEach(function(r,i){
+    TROPHIES.push({id:r[1],cat:cat,name:r[2],emoji:r[3],desc:r[4],goal:r[0],tier:o.tier||1+Math.floor(i*4/rows.length),secret:!!o.secret,meta:!!o.meta,
+      val:o.val||function(p,c){return c[key]||0;}});
+  });
+}
+series('play','sessions',[[1,'play1','Premier pas','👣','Termine ta première partie'],[5,'play5','Habitué','🎮','Termine 5 parties'],[10,'play10','Joueur régulier','🕹️','Termine 10 parties'],[25,'play25','Passionné','🔥','Termine 25 parties'],[50,'play50','Marathon','🏃','Termine 50 parties'],[100,'play100','Centurion','💯','Termine 100 parties'],[250,'play250','Légende','👑','Termine 250 parties']]);
+series('acc','correct',[[10,'acc10','Bien parti','✅','10 bonnes réponses'],[50,'acc50','Ça roule','👍','50 bonnes réponses'],[100,'acc100','Cent !','💪','100 bonnes réponses'],[250,'acc250','Machine à mots','⚙️','250 bonnes réponses'],[500,'acc500','Cerveau en feu','🧠','500 bonnes réponses'],[1000,'acc1000','Mille mercis','🌟','1000 bonnes réponses'],[2500,'acc2500','Maître des mots','🏅','2500 bonnes réponses']]);
+series('perfect','perfect',[[1,'perf1','Sans faute','🎯','Une partie parfaite'],[5,'perf5','Précis','🏹','5 parties parfaites'],[10,'perf10','Tireur d’élite','🎖️','10 parties parfaites'],[25,'perf25','Perfectionniste','💎','25 parties parfaites'],[50,'perf50','Impeccable','🌈','50 parties parfaites']]);
+series('streak','bestStreak',[[2,'streak2','Deux jours','📅','2 jours de suite'],[3,'streak3','Trois jours','🗓️','3 jours de suite'],[5,'streak5','Cinq jours','⭐','5 jours de suite'],[7,'streak7','Une semaine','🔥','7 jours de suite'],[14,'streak14','Deux semaines','🚀','14 jours de suite'],[30,'streak30','Un mois','🏆','30 jours de suite'],[60,'streak60','Deux mois','🌋','60 jours de suite'],[100,'streak100','Cent jours','👑','100 jours de suite']]);
+series('days','days',[[3,'days3','Trois jours','☀️','Joue 3 jours différents'],[7,'days7','Sept jours','🌤️','Joue 7 jours différents'],[14,'days14','Quatorze jours','🌻','Joue 14 jours différents'],[30,'days30','Trente jours','🌳','Joue 30 jours différents'],[60,'days60','Soixante jours','🏔️','Joue 60 jours différents']]);
+series('lvl','level',[[2,'lvl2','Niveau 2','🥉','Atteins le niveau 2'],[3,'lvl3','Niveau 3','🥈','Atteins le niveau 3'],[5,'lvl5','Niveau 5','🥇','Atteins le niveau 5'],[8,'lvl8','Niveau 8','🎓','Atteins le niveau 8'],[10,'lvl10','Niveau 10','🦸','Atteins le niveau 10'],[15,'lvl15','Niveau 15','🧙','Atteins le niveau 15'],[20,'lvl20','Niveau 20','🐉','Atteins le niveau 20'],[30,'lvl30','Niveau 30','🌌','Atteins le niveau 30']]);
+series('stars','stars',[[10,'star10','Dix étoiles','✨','Gagne 10 étoiles'],[25,'star25','Vingt-cinq étoiles','💫','Gagne 25 étoiles'],[50,'star50','Cinquante étoiles','🌠','Gagne 50 étoiles'],[100,'star100','Cent étoiles','⭐','Gagne 100 étoiles'],[250,'star250','Ciel étoilé','🌌','Gagne 250 étoiles'],[500,'star500','Galaxie','🪐','Gagne 500 étoiles']]);
+series('master','mastered',[[1,'master1','Premier sticker','🏷️','Apprends un mot à fond'],[5,'master5','Cinq stickers','📒','Apprends 5 mots à fond'],[10,'master10','Dix stickers','📗','Apprends 10 mots à fond'],[25,'master25','Vingt-cinq stickers','📚','Apprends 25 mots à fond'],[50,'master50','Cinquante stickers','🗂️','Apprends 50 mots à fond'],[100,'master100','Cent stickers','🏛️','Apprends 100 mots à fond'],[200,'master200','Deux cents stickers','🏰','Apprends 200 mots à fond'],[400,'master400','Album géant','🌍','Apprends 400 mots à fond']]);
+series('seen','seen',[[5,'seen5','Curieux','🔍','Découvre 5 mots'],[25,'seen25','Explorateur','🧭','Découvre 25 mots'],[100,'seen100','Aventurier','🗺️','Découvre 100 mots'],[250,'seen250','Grand voyageur','🚂','Découvre 250 mots']]);
+WORLDS.forEach(function(w){
+  if(w.custom)return;
+  var rows=[],goals=[5,15,30],tags=['a','b','c'],names=['Débutant','Connaisseur','Expert'],em=['🌱','🌿','🌳'];
+  goals.forEach(function(g,i){if(w.words.length>=g)rows.push([g,'w_'+w.id+'_'+tags[i],names[i]+' : '+w.de,w.e||em[i],g+' mots appris à fond dans « '+w.de+' »']);});
+  series('world',null,rows,{val:function(p,c){return (c.byWorld[w.id]||0);}});
+});
+series('chest','chests',[[1,'chest1','Premier coffre','🎁','Atteins l’objectif du jour'],[5,'chest5','Cinq coffres','📦','Ouvre 5 coffres'],[10,'chest10','Dix coffres','🧰','Ouvre 10 coffres'],[25,'chest25','Chasseur de trésors','🏴‍☠️','Ouvre 25 coffres']]);
+series('style','owned',[[1,'style1','Premier objet','🛍️','Obtiens un objet pour Igi'],[3,'style3','Garde-robe','👒','Obtiens 3 objets'],[6,'style6','Fashion Igi','🧣','Obtiens 6 objets'],[12,'style12','Star du podium','🕶️','Obtiens 12 objets'],[20,'style20','Boutique complète','🏬','Obtiens 20 objets']]);
+series('fun','early',[[1,'early1','Lève-tôt','🌅','Joue avant 8 h']],{tier:1,secret:true});
+series('fun','weekend',[[1,'wknd1','Week-end studieux','🎒','Joue un samedi ou un dimanche']],{tier:1,secret:true});
+series('fun','comeback',[[1,'back1','Te revoilà !','👋','Reviens après plus d’une semaine']],{tier:2,secret:true});
+series('fun','buys',[[1,'buy1','Premier achat','🪙','Achète un objet avec tes pièces']],{tier:1,secret:true});
+series('meta','badgeCount',[[10,'meta10','Collectionneur','🏆','10 trophées'],[25,'meta25','Grand collectionneur','🥇','25 trophées'],[50,'meta50','Musée des trophées','🏛️','50 trophées'],[75,'meta75','Trésor national','💠','75 trophées']],{meta:true});
+
+function rctx(p){
+  var c={level:level(p.xp),stars:p.stars||0,mastered:0,seen:0,owned:p.owned.length,byWorld:{},badgeCount:Object.keys(p.badges).length},k;
+  ALL.forEach(function(x){var s=p.words[x.k];if(s){c.seen++;if(s.b>=3){c.mastered++;c.byWorld[x.world]=(c.byWorld[x.world]||0)+1;}}});
+  for(k in p.stats)c[k]=p.stats[k];
+  c.bestStreak=Math.max(c.bestStreak||0,p.streak||0);
+  return c;
+}
+/* attribue tout ce qui est mérité (rétroactif, idempotent) ; ajoute les pièces offertes */
+function award(p){
+  fixP(p);
+  var res={list:[],coins:0},now=Date.now(),pass,c,added;
+  for(pass=0;pass<3;pass++){
+    c=rctx(p);added=false;
+    TROPHIES.forEach(function(t){
+      if(p.badges[t.id])return;
+      if(t.val(p,c)>=t.goal){p.badges[t.id]=now;res.list.push(t);res.coins+=TIER_COINS[t.tier-1];added=true;}
+    });
+    if(!added)break;
+  }
+  p.coins+=res.coins;
+  if(res.list.length)p.t=now;
+  return res;
+}
+var TBYID={};TROPHIES.forEach(function(t){TBYID[t.id]=t;});
+
+/* ---- boutique d’Igi : verrou = 0 gratuit · N pièces · 'l12' niveau 12 · 'b:streak7' trophée ---- */
+var SHOP=[];
+function shop(kind,rows){rows.forEach(function(r){SHOP.push({id:kind+':'+r[0],kind:kind,val:r[0],name:r[1],lock:r[2],emoji:r[3]});});}
+shop('hat',[['cap','Casquette',30,'🧢'],['party','Chapeau de fête',20,'🎉'],['tophat','Haut-de-forme',60,'🎩'],['beanie','Bonnet','b:streak3','⛄'],['crown','Couronne','l5','👑'],['wizard','Chapeau de sorcier',80,'🧙']]);
+shop('glasses',[['round','Lunettes rondes',25,'👓'],['sun','Lunettes de soleil',45,'🕶️'],['heart','Lunettes cœur','l8','💖'],['star','Lunettes étoile','b:acc100','🤩']]);
+shop('neck',[['bow','Nœud papillon',20,'🎀'],['scarf','Écharpe',30,'🧣'],['medal','Médaille','b:master25','🏅']]);
+shop('pet',[['duck','Poussin',50,'🐥'],['bug','Coccinelle',40,'🐞'],['fly','Papillon',60,'🦋'],['turtle','Tortue',70,'🐢'],['dragon','Mini dragon','l15','🐉'],['unicorn','Licorne','b:streak14','🦄']]);
+shop('theme',[['sunset','Coucher de soleil',40,'🌇'],['night','Nuit étoilée',50,'🌃'],['forest','Forêt',60,'🌲'],['sea','Mer',70,'🌊'],['candy','Bonbons','l10','🍭']]);
+shop('skin',[['#6A4B3A','Brun d’origine',0,'🟤'],['#8C5A8C','Prune',25,'🟣'],['#3E7CB1','Bleu nuit',25,'🔵'],['#4E9B6B','Mousse',25,'🟢'],['#C8553D','Rouille',30,'🟠'],['#D96B9C','Rose',30,'🌸'],['#E0A526','Miel','l4','🍯'],['#2B2D42','Ombre','b:play25','⚫'],['#9AA5B1','Argent','b:perf10','⚪']]);
+var SBYID={};SHOP.forEach(function(it){SBYID[it.id]=it;});
+var KIND_LABEL={hat:'Chapeaux',glasses:'Lunettes',neck:'Cou',pet:'Compagnons',theme:'Décors',skin:'Couleur des piquants'};
+
+function parseLock(l){
+  if(!l)return {t:'free'};
+  if(typeof l==='number')return {t:'coins',n:l};
+  if(/^l\d+$/.test(l))return {t:'lvl',n:+l.slice(1)};
+  if(l.indexOf('b:')===0)return {t:'badge',id:l.slice(2)};
+  return {t:'free'};
+}
+function itemPrice(it){var k=parseLock(it.lock);return k.t==='coins'?k.n:0;}
+function usable(p,it){
+  var k=parseLock(it.lock);
+  if(k.t==='free'||p.owned.indexOf(it.id)>=0)return true;
+  if(k.t==='lvl')return level(p.xp)>=k.n;
+  if(k.t==='badge')return !!p.badges[k.id];
+  return false;
+}
+function lockText(it){
+  var k=parseLock(it.lock);
+  if(k.t==='coins')return '🪙 '+k.n;
+  if(k.t==='lvl')return '🔒 Niveau '+k.n;
+  if(k.t==='badge')return '🔒 Trophée « '+(TBYID[k.id]?TBYID[k.id].name:k.id)+' »';
+  return 'Gratuit';
+}
+
+/* ---- Igi habillé : dessins SVG par objet ---- */
+var LN='stroke="#1B2150" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+var IGI_HAT={
+  cap:'<path d="M63 62q2-18 23-18q20 0 24 18z" fill="#D93B41" '+LN+'/><path d="M98 61h22q-3 7-22 6z" fill="#D93B41" '+LN+'/>',
+  party:'<path d="M74 60l12-36l12 36z" fill="#FFC83A" '+LN+'/><circle cx="86" cy="24" r="4.5" fill="#E02F6B" '+LN+'/>',
+  tophat:'<rect x="68" y="53" width="40" height="7" rx="3" fill="#1B2150" '+LN+'/><rect x="74" y="28" width="28" height="27" rx="3" fill="#1B2150" '+LN+'/><rect x="74" y="46" width="28" height="6" fill="#E02F6B"/>',
+  beanie:'<path d="M63 62q0-21 23-21q23 0 24 21z" fill="#33B5F2" '+LN+'/><rect x="62" y="57" width="48" height="8" rx="4" fill="#fff" '+LN+'/><circle cx="86" cy="38" r="5" fill="#fff" '+LN+'/>',
+  crown:'<path d="M67 61l-3-22l13 10l9-15l9 15l13-10l-3 22z" fill="#FFC83A" '+LN+'/><circle cx="86" cy="36" r="2.5" fill="#E02F6B"/>',
+  wizard:'<path d="M64 60l22-52l22 52z" fill="#5C6CFF" '+LN+'/><ellipse cx="86" cy="60" rx="30" ry="5" fill="#5C6CFF" '+LN+'/><circle cx="84" cy="36" r="3.5" fill="#FFC83A"/>'
+};
+var IGI_GLASSES={
+  round:'<circle cx="90" cy="72" r="10" fill="#fff" fill-opacity=".35" '+LN+'/><path d="M80 72h-18" fill="none" '+LN+'/>',
+  sun:'<ellipse cx="90" cy="72" rx="11" ry="9" fill="#1B2150" '+LN+'/><path d="M79 72h-17" fill="none" '+LN+'/>',
+  heart:'<path d="M90 82l-9-9a5 5 0 0 1 9-6a5 5 0 0 1 9 6z" fill="#E02F6B" '+LN+'/><path d="M80 72h-18" fill="none" '+LN+'/>',
+  star:'<path d="M90 61l3 7l8 .6l-6 5l2 8l-7-4l-7 4l2-8l-6-5l8-.6z" fill="#FFC83A" '+LN+'/><path d="M80 72h-18" fill="none" '+LN+'/>'
+};
+var IGI_NECK={
+  bow:'<path d="M80 99l-14-8v16zM80 99l14-8v16z" fill="#E02F6B" '+LN+'/><circle cx="80" cy="99" r="4" fill="#FFC83A" '+LN+'/>',
+  scarf:'<path d="M60 94q22 14 46-2l3 9q-24 15-50 1z" fill="#E02F6B" '+LN+'/><path d="M70 101l-3 15h11l-1-12z" fill="#E02F6B" '+LN+'/>',
+  medal:'<path d="M66 92q14 18 30 2" fill="none" '+LN+'/><circle cx="80" cy="108" r="7" fill="#FFC83A" '+LN+'/>'
+};
+var PET_EMO={};SHOP.forEach(function(it){if(it.kind==='pet')PET_EMO[it.val]=it.emoji;});
+
+function igiGear(p){
+  var e=p&&p.equipped?p.equipped:{};
+  return {neck:IGI_NECK[e.neck]||'',glasses:IGI_GLASSES[e.glasses]||'',hat:IGI_HAT[e.hat]||'',pet:PET_EMO[e.pet]||'',skin:e.skin||''};
+}
+
+VIEWS.trophies=function(){
+  var p=me(),h=topbar({back:'home'}),c=rctx(p),got=Object.keys(p.badges).filter(function(k){return TBYID[k];}).length;
+  h+='<h1 class="pt">Mes trophées</h1><p class="hint">'+got+' / '+TROPHIES.length+' trophées · chaque trophée offre des pièces (Bronze 10, Argent 20, Or 35, Diamant 60).</p>';
+  CATS.forEach(function(cat){
+    var list=TROPHIES.filter(function(t){return t.cat===cat[0];});
+    if(!list.length)return;
+    var n=list.filter(function(t){return p.badges[t.id];}).length;
+    h+='<h2 class="sec">'+cat[1]+' <small>'+n+' / '+list.length+'</small></h2><div class="tlist">';
+    list.forEach(function(t){
+      var has=!!p.badges[t.id],v=Math.min(t.goal,t.val(p,c)),hide=t.secret&&!has;
+      h+='<div class="trophy t'+t.tier+(has?' got':'')+'"><span class="te">'+(hide?'❓':t.emoji)+'</span><div><b>'+(hide?'Surprise !':esc(t.name))+'</b><small>'+(hide?'Continue à jouer pour la découvrir':esc(t.desc))+'</small>';
+      h+=has?'<small class="tt">'+TIER_NAMES[t.tier-1]+' · +'+TIER_COINS[t.tier-1]+' 🪙 gagnées</small>':'<span class="bar"><i style="--p:'+Math.round(v/t.goal*100)+'%"></i></span><small class="tt">'+v+' / '+t.goal+' · '+TIER_NAMES[t.tier-1]+' · +'+TIER_COINS[t.tier-1]+' 🪙</small>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+  });
+  return h;
+};
+
+VIEWS.shop=function(){
+  var p=me(),h=topbar({back:'home'}),e=p.equipped;
+  h+='<h1 class="pt">Boutique d’Igi</h1>';
+  h+='<section class="igistage th-'+esc(e.theme||'none')+'">'+igi('happy',150)+'</section>';
+  if(S.smsg)h+='<p class="flashmsg" role="status">'+esc(S.smsg)+'</p>';
+  KINDS.forEach(function(kind){
+    var items=SHOP.filter(function(it){return it.kind===kind;});
+    h+='<h2 class="sec">'+KIND_LABEL[kind]+'</h2><div class="shopg">';
+    if(kind!=='skin')h+='<button class="si'+(!e[kind]?' on':'')+'" data-act="unequip" data-kind="'+kind+'"><span class="se">∅</span><span class="sn">Aucun</span><span class="ss">'+(!e[kind]?'Porté ✓':'Enlever')+'</span></button>';
+    items.forEach(function(it){
+      var ok=usable(p,it),on=e[kind]===it.val,price=itemPrice(it);
+      var st=on?'Porté ✓':ok?'À toi · mettre':lockText(it);
+      h+='<button class="si'+(on?' on':'')+(ok?'':' lk')+'" data-act="item" data-id="'+esc(it.id)+'"><span class="se"'+(kind==='skin'?' style="background:'+it.val+';border-radius:50%;width:1.2em;height:1.2em"':'')+'>'+(kind==='skin'?'':it.emoji)+'</span><span class="sn">'+esc(it.name)+'</span><span class="ss">'+st+'</span></button>';
+    });
+    h+='</div>';
+  });
+  return h;
+};
+
+ACT.trophies=function(){go('trophies');};
+ACT.shop=function(){S.smsg='';go('shop');};
+ACT.item=function(t){
+  var it=SBYID[t.dataset.id],p=me();if(!it||!p)return;
+  fixP(p);
+  var owned=p.owned.indexOf(it.id)>=0;
+  if(usable(p,it)){
+    if(!owned){p.owned.push(it.id);}
+    p.equipped[it.kind]=(p.equipped[it.kind]===it.val)?'':it.val;
+    S.smsg='';
+  }else{
+    var k=parseLock(it.lock);
+    if(k.t==='coins'){
+      if(p.coins<k.n){S.smsg='Il te manque '+(k.n-p.coins)+' 🪙 pour « '+it.name+' ». Joue encore un peu !';render();return;}
+      p.coins-=k.n;p.owned.push(it.id);p.equipped[it.kind]=it.val;p.stats.buys++;
+      S.smsg='Acheté : '+it.name+' !';sfx.win();
+    }else{S.smsg=lockText(it).replace('🔒 ','Pour l’avoir : ')+'.';render();return;}
+  }
+  var aw=award(p);
+  if(aw.list.length)S.smsg=(S.smsg?S.smsg+' · ':'')+'Nouveau trophée : '+aw.list.map(function(x){return x.name;}).join(', ')+' (+'+aw.coins+' 🪙)';
+  p.t=Date.now();save();sfx.pop();render();
+};
+ACT.unequip=function(t){var p=me();if(!p)return;fixP(p);p.equipped[t.dataset.kind]='';p.t=Date.now();S.smsg='';save();sfx.pop();render();};
+ACT.newsok=function(){S.news=null;render();};
+
+/* première ouverture après la mise à jour : rattrapage des trophées de tous les joueurs, puis « Nouveautés » une seule fois */
+DB.players.forEach(fixP);
+if((DB.seenVer||0)<REWARDS_VERSION){
+  DB.players.forEach(function(p){award(p);});
+  if(DB.players.length)S.news=NEWS[NEWS.length-1];
+  DB.seenVer=REWARDS_VERSION;
+  save();
+}
+
 VIEWS.profiles=function(){
-  var h='<section class="stage" style="margin-top:22px">'+igi('cheer',130)+'<h1>Wer spielt?</h1><p class="hint">Qui joue ?</p>';
+  var h='<section class="stage" style="margin-top:22px">'+igi('cheer',130,false)+'<h1>Wer spielt?</h1><p class="hint">Qui joue ?</p>';
   if(DB.players.length){
     h+='<div class="plist">';
     DB.players.forEach(function(p){
@@ -753,10 +1001,18 @@ VIEWS.profiles=function(){
 
 VIEWS.home=function(){
   var p=me(),g=GREET[todayN()%GREET.length],h=topbar();
-  h+='<section class="hero"><button class="igi-box" data-act="igi" aria-label="Dire bonjour à Igi">'+igi('happy',140)+'</button>';
+  if(S.news){
+    h+='<section class="panel newsp"><h2>🎁 '+esc(S.news.t)+'</h2><ul>';
+    S.news.l.forEach(function(l){h+='<li>'+esc(l)+'</li>';});
+    h+='</ul><button class="btn alt small" data-act="newsok">Super !</button></section>';
+  }
+  h+='<section class="hero th-'+esc((p.equipped&&p.equipped.theme)||'none')+'"><button class="igi-box" data-act="igi" aria-label="Dire bonjour à Igi">'+igi('happy',140)+'</button>';
   h+='<div class="bubble"><p class="de">'+g.de+', '+esc(p.name)+'!</p><p class="fr">'+g.fr+'</p><button class="btn small ghost" data-act="greet">'+ICON.spk+' Écouter</button></div></section>';
   var can=seenCount(p)>=4;
   h+='<button class="daily'+(can?'':' off')+'" data-act="daily"'+(can?'':' disabled')+'><span class="dt">Tagesaufgabe</span><span class="ds">Défi du jour</span><span class="dp">'+(can?'10 mots à réviser, choisis par Igi':'Découvre au moins 4 mots dans un monde pour le débloquer')+'</span></button>';
+  var dc=(p.daily&&p.daily.date===todayN())?p.daily.count:0,dg=Math.min(DAILY_GOAL,dc),dd=!!(p.daily&&p.daily.date===todayN()&&p.daily.chest);
+  h+='<section class="goal"><div class="row"><b>Objectif du jour</b><span>'+(dd?'Coffre ouvert 🎁':dg+' / '+DAILY_GOAL+' bonnes réponses · coffre +'+CHEST_COINS+' 🪙')+'</span></div><span class="bar"><i style="--p:'+Math.round(dg/DAILY_GOAL*100)+'%"></i></span></section>';
+  h+='<div class="row rw"><button class="btn small" data-act="trophies">🏆 Trophées</button><button class="btn small alt" data-act="shop">🛍️ Boutique d’Igi</button></div>';
   if(TTS.ready&&(!TTS.ok||!TTS.voices.length))h+='<button class="note" data-act="settings"><b>Pas de voix allemande détectée.</b> Touche ici pour voir comment l’ajouter.</button>';
   h+='<h2 class="sec">Choisis un monde</h2><div class="worlds">';
   WORLDS.forEach(function(w){
@@ -889,7 +1145,10 @@ VIEWS.result=function(){
   var R=S.res,p=me(),h=topbar({back:'home'});
   h+='<section class="res"><div id="resigi">'+igi('cheer',150)+'</div><h1>'+(R.stars===3?'Fantastisch!':R.stars===2?'Sehr gut!':'Gut gemacht!')+'</h1><p class="fr">'+esc(R.sub)+'</p><div class="stars">';
   for(var i=1;i<=3;i++)h+='<span class="bs" style="animation-delay:'+(i*0.18)+'s">'+ICON.star(i<=R.stars?'on':'off')+'</span>';
-  h+='</div><p class="xp">+'+R.xp+' XP · Niveau '+level(p.xp)+(R.lvup?' · Nouveau niveau !':'')+'</p><div class="row center"><button class="btn alt" data-act="again">Rejouer</button><button class="btn" data-act="leave">Continuer</button></div></section>';
+  h+='</div><p class="xp">+'+R.xp+' XP · Niveau '+level(p.xp)+(R.lvup?' · Nouveau niveau !':'')+'</p>';
+  h+='<p class="xp">+'+(R.coins||0)+' 🪙'+(R.chest?' · Coffre du jour ouvert ! 🎁':'')+'</p>';
+  (R.trophies||[]).forEach(function(t){h+='<p class="newtro">🏆 Nouveau trophée : '+t.emoji+' <b>'+esc(t.name)+'</b> <small>('+TIER_NAMES[t.tier-1]+')</small></p>';});
+  h+='<div class="row center"><button class="btn alt" data-act="again">Rejouer</button><button class="btn" data-act="leave">Continuer</button></div></section>';
   return h;
 };
 
@@ -1020,9 +1279,23 @@ function startLetters(wid){
 }
 
 function finish(o){
-  var p=me(),lv0=level(p.xp),stars=o.acc>=0.9?3:o.acc>=0.6?2:1;
-  p.stars+=stars;p.xp+=o.xp;bumpStreak();save();
-  S.res={stars:stars,xp:o.xp,sub:o.sub,again:o.again,lvup:level(p.xp)>lv0};
+  var p=me(),lv0=level(p.xp),stars=o.acc>=0.9?3:o.acc>=0.6?2:1,t=todayN(),st,d=new Date(),first,gap,chest=false,coins;
+  fixP(p);st=p.stats;
+  first=p.last!==t;gap=p.last?t-p.last:0;
+  p.stars+=stars;p.xp+=o.xp;bumpStreak();
+  st.sessions++;st.correct+=o.ok||0;st.wrong+=Math.max(0,(o.n||0)-(o.ok||0));
+  if(o.acc>=1)st.perfect++;
+  if(first){st.days++;if(gap>7)st.comeback++;}
+  st.bestStreak=Math.max(st.bestStreak,p.streak);
+  if(d.getHours()<8)st.early++;
+  if(d.getDay()===0||d.getDay()===6)st.weekend++;
+  if(p.daily.date!==t)p.daily={date:t,count:0,chest:false};
+  p.daily.count+=o.ok||0;
+  if(!p.daily.chest&&p.daily.count>=DAILY_GOAL){p.daily.chest=true;chest=true;st.chests++;}
+  coins=stars*3+(chest?CHEST_COINS:0);p.coins+=coins;
+  var aw=award(p);
+  p.t=Date.now();save();
+  S.res={stars:stars,xp:o.xp,sub:o.sub,again:o.again,lvup:level(p.xp)>lv0,coins:coins+aw.coins,chest:chest,trophies:aw.list};
   go('result');
   sfx.win();confetti();
   speak(stars===3?'Fantastisch!':stars===2?'Sehr gut!':'Gut gemacht!');
@@ -1092,7 +1365,7 @@ ACT.next=function(){
   var Q=S.q;if(S.screen!=='quiz'||!Q.ans)return;
   Q.i++;
   if(Q.i>=Q.qs.length){
-    finish({acc:Q.ok/Q.qs.length,xp:Q.ok*10+5,sub:Q.ok+' / '+Q.qs.length+' bonnes réponses',again:Q.o.again});
+    finish({ok:Q.ok,n:Q.qs.length,acc:Q.ok/Q.qs.length,xp:Q.ok*10+5,sub:Q.ok+' / '+Q.qs.length+' bonnes réponses',again:Q.o.again});
     return;
   }
   Q.ans=null;Q.msg=null;
@@ -1123,7 +1396,7 @@ ACT.flip=function(t){
         if(S.screen!=='memory'||S.mem!==M)return;
         var acc=M.moves<=M.total+2?1:M.moves<=M.total+6?0.7:0.4;
         var wid=M.w;
-        finish({acc:acc,xp:30,sub:'Toutes les paires trouvées en '+M.moves+' coups',again:function(){startMemory(wid);}});
+        finish({ok:M.total,n:M.total,acc:acc,xp:30,sub:'Toutes les paires trouvées en '+M.moves+' coups',again:function(){startMemory(wid);}});
       },1100);
     }
   }else{
@@ -1199,7 +1472,7 @@ ACT.lnextw=function(){
   L.i++;
   if(L.i>=L.list.length){
     var wid=L.w,n=L.list.length;
-    finish({acc:L.ok/n,xp:L.ok*10+(n-L.ok)*4+5,sub:L.ok+' / '+n+' mots trouvés sans aide ni erreur',again:function(){startLetters(wid);}});
+    finish({ok:L.ok,n:n,acc:L.ok/n,xp:L.ok*10+(n-L.ok)*4+5,sub:L.ok+' / '+n+' mots trouvés sans aide ni erreur',again:function(){startLetters(wid);}});
     return;
   }
   setupLetter();render();
@@ -1251,7 +1524,9 @@ function mergePlayer(q){
   var p=null,ch=false;
   DB.players.forEach(function(x){if(x.id===q.id)p=x;});
   if(!p){
-    DB.players.push({id:q.id,name:String(q.name).slice(0,14),color:q.color||COLORS[0],stars:q.stars||0,xp:q.xp||0,streak:q.streak||0,last:q.last||0,words:q.words||{}});
+    var np={id:q.id,name:String(q.name).slice(0,14),color:q.color||COLORS[0],stars:q.stars||0,xp:q.xp||0,streak:q.streak||0,last:q.last||0,words:q.words||{},
+      coins:q.coins,badges:q.badges,owned:q.owned,equipped:q.equipped,stats:q.stats,daily:q.daily,t:q.t};
+    DB.players.push(fixP(np));
     return true;
   }
   var st=Math.max(p.stars||0,q.stars||0),xp=Math.max(p.xp||0,q.xp||0);
@@ -1259,6 +1534,18 @@ function mergePlayer(q){
   if((q.last||0)>(p.last||0)||((q.last||0)===(p.last||0)&&(q.streak||0)>(p.streak||0))){p.last=q.last||0;p.streak=q.streak||0;ch=true;}
   p.words=p.words||{};
   Object.keys(q.words||{}).forEach(function(k){var a=p.words[k],b=q.words[k];if(b&&(!a||b.b>a.b||(b.b===a.b&&b.d>a.d))){p.words[k]=b;ch=true;}});
+  fixP(p);
+  var qb=q.badges||{},qs=q.stats||{},qe=q.equipped||{},qd=q.daily||{};
+  Object.keys(qb).forEach(function(k){if(!p.badges[k]||qb[k]<p.badges[k]){p.badges[k]=qb[k];ch=true;}});
+  (Array.isArray(q.owned)?q.owned:[]).forEach(function(k){if(p.owned.indexOf(k)<0){p.owned.push(k);ch=true;}});
+  Object.keys(qs).forEach(function(k){if(typeof qs[k]==='number'&&qs[k]>(p.stats[k]||0)){p.stats[k]=qs[k];ch=true;}});
+  if((q.t||0)>(p.t||0)){
+    if(typeof q.coins==='number'&&q.coins!==p.coins){p.coins=q.coins;ch=true;}
+    KINDS.forEach(function(k){if(typeof qe[k]==='string'&&qe[k]!==p.equipped[k]){p.equipped[k]=qe[k];ch=true;}});
+    p.t=q.t;
+  }
+  if((qd.date||0)>p.daily.date||((qd.date||0)===p.daily.date&&(qd.count||0)>p.daily.count)){p.daily={date:qd.date||0,count:qd.count||0,chest:!!qd.chest};ch=true;}
+  else if(qd.date===p.daily.date&&qd.chest&&!p.daily.chest){p.daily.chest=true;ch=true;}
   return ch;
 }
 function importBackup(txt){
@@ -1305,7 +1592,7 @@ window.IGI_APP={
   setFam:function(c){DB.fam=c;lsSet(JSON.stringify(DB));},
   setCloud:function(p){for(var k in p)CL[k]=p[k];softRender();},
   setFsWords:setFsWords,
-  payload:function(p){return {name:p.name,color:p.color,stars:p.stars||0,xp:p.xp||0,streak:p.streak||0,last:p.last||0,words:p.words||{}};},
+  payload:function(p){return {name:p.name,color:p.color,stars:p.stars||0,xp:p.xp||0,streak:p.streak||0,last:p.last||0,words:p.words||{},coins:p.coins||0,badges:p.badges||{},owned:p.owned||[],equipped:p.equipped||{},stats:p.stats||{},daily:p.daily||{date:0,count:0,chest:false},t:p.t||0};},
   mergePlayer:mergePlayer,
   afterMerge:function(){if(!me()&&DB.players.length===1)DB.cur=DB.players[0].id;lsSet(JSON.stringify(DB));rebuildCustom();softRender();},
   removePlayer:function(id){
@@ -1412,7 +1699,7 @@ app.addEventListener('submit',function(e){
   if(!name)return;
   var chosen=e.target.querySelector('input[name="pc"]:checked');
   var p={id:'p'+Date.now(),name:name,color:chosen?chosen.value:COLORS[0],stars:0,xp:0,streak:0,last:0,words:{}};
-  DB.players.push(p);DB.cur=p.id;save();rebuildCustom();ctx();
+  fixP(p);DB.players.push(p);DB.cur=p.id;save();rebuildCustom();ctx();
   go('home');
   speak('Hallo, '+name+'!');
 });
@@ -1496,7 +1783,7 @@ import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,co
         var id=ch.doc.id;
         if(ch.type==='removed'){A.removePlayer(id);return;}
         var d=ch.doc.data();
-        lastPushed[id]=JSON.stringify({name:d.name,color:d.color,stars:d.stars||0,xp:d.xp||0,streak:d.streak||0,last:d.last||0,words:d.words||{}});
+        lastPushed[id]=JSON.stringify(A.payload(d));
         var o=Object.assign({id:id},d);
         A.mergePlayer(o);
       });
