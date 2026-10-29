@@ -276,7 +276,7 @@ button:disabled{cursor:default}
 }
 
 /* récompenses */
-.rw{margin-top:14px;justify-content:center}
+.rwb{margin-top:14px;justify-content:center}
 .goal{display:grid;gap:6px;margin:0 0 14px;padding:10px 14px;background:var(--surface);border:3px solid var(--line);border-radius:18px}
 .goal .row{justify-content:space-between}
 .newsp ul{margin:0;padding-left:20px;display:grid;gap:4px}
@@ -304,6 +304,18 @@ button:disabled{cursor:default}
 .si .se{font-size:2rem;display:inline-block}
 .si .sn{font-family:var(--fd);font-size:1rem}
 .si .ss{font-size:.85rem;color:var(--muted)}
+
+.stabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 12px}
+.stab{padding:6px 14px;min-height:44px;font-family:var(--fd);font-size:1rem;background:var(--surface);border:3px solid var(--line);border-radius:999px}
+.stab.on{background:var(--sun);color:var(--on-sun);box-shadow:0 3px 0 var(--line)}
+.stab small{opacity:.7}
+.th-space{background:linear-gradient(#0B1030,#5B2A86)}.th-desert{background:linear-gradient(#FFE0A3,#E09F5B)}.th-snow{background:linear-gradient(#E8F4FF,#A9C8E8)}.th-rainbow{background:linear-gradient(90deg,#ff9a9a,#ffd88a,#b8f2a0,#9ad8ff,#c9b0ff)}.th-meadow{background:linear-gradient(#CFF5B8,#7BC86C)}.th-lava{background:linear-gradient(#FF8844,#8B1E2D)}
+.wform{display:grid;gap:12px;width:100%;max-width:520px;margin-inline:auto}
+.wform input[type=text]{font:inherit;font-family:var(--fd);font-size:1.6rem;text-align:center;color:var(--ink);background:var(--surface);border:3px solid var(--line);border-radius:16px;padding:10px 12px;width:100%;min-height:56px}
+.wform input.err{border-color:var(--bad);animation:shake .45s}
+.whint{font-family:var(--fd);font-size:1.8rem;letter-spacing:.2em;text-align:center;min-height:2.2rem}
+.wchars{display:flex;gap:8px;justify-content:center}
+.wchars .btn{min-width:48px}
 </style>
 
 <div id="app"></div>
@@ -709,7 +721,7 @@ function igi(mood,size,eq){
   return '<span class="igi"'+(gear.skin?' style="--igi-spike:'+gear.skin+'"':'')+'><svg viewBox="0 0 120 120" width="'+size+'" height="'+size+'" role="img" aria-label="Igi, le hérisson">'
     +'<ellipse cx="58" cy="113" rx="40" ry="4.5" fill="var(--line)" opacity=".2"/>'
     +'<polygon points="'+pts.join(' ')+'" style="fill:var(--igi-spike);stroke:var(--line)" stroke-width="3" stroke-linejoin="round"/>'
-    +'<ellipse cx="56" cy="74" rx="38" ry="30" style="fill:var(--igi-spike)"/>'
+    +gear.back+'<ellipse cx="56" cy="74" rx="38" ry="30" style="fill:var(--igi-spike)"/>'
     +'<ellipse cx="46" cy="104" rx="11" ry="6" style="fill:var(--igi-foot);stroke:var(--line)" stroke-width="3"/>'
     +'<ellipse cx="80" cy="104" rx="11" ry="6" style="fill:var(--igi-foot);stroke:var(--line)" stroke-width="3"/>'
     +'<ellipse cx="76" cy="55" rx="6" ry="8" style="fill:var(--igi-skin);stroke:var(--line)" stroke-width="3"/>'
@@ -718,7 +730,7 @@ function igi(mood,size,eq){
     +'<circle cx="82" cy="85" r="4" fill="#FF8FAE" opacity=".85"/>'
     +'<circle cx="110" cy="80" r="5" fill="#1B2150"/>'
     +mouth
-    +gear.neck+gear.glasses+gear.hat
+    +gear.neck+gear.glasses+gear.hat+gear.hand
     +'</svg>'+(gear.pet?'<span class="ipet" style="font-size:'+Math.round(size*0.3)+'px" aria-hidden="true">'+gear.pet+'</span>':'')+'</span>';
 }
 
@@ -762,12 +774,12 @@ var VIEWS={};
 /* ================= récompenses : pièces, trophées, boutique d’Igi (d’après le schéma Conjugo v1.3) =================
    Règle d’or : on AJOUTE seulement. Aucun identifiant (trophée, objet) n’est jamais modifié ni supprimé.
    Les stickers de l’album (mots appris) ne sont pas touchés. */
-var REWARDS_VERSION=1;
-var NEWS=[{v:1,t:'Du nouveau chez Igi !',l:['🪙 Tu gagnes des pièces à chaque partie, et un coffre quand l’objectif du jour est atteint.','🏆 Des trophées à débloquer : parties, séries de jours, mots appris, mondes…','🛍️ La boutique d’Igi : chapeaux, lunettes, écharpes, compagnons, décors et couleurs.','Tes stickers et tout ce que tu as déjà gagné sont conservés.']}];
+var REWARDS_VERSION=2;
+var NEWS=[{v:2,t:'Écris le mot et plus d’objets !',l:['✍️ Nouveau jeu « Écris le mot » : écris le mot en allemand en entier, avec un indice si besoin.','🛍️ Plus de 100 nouveaux objets dans la boutique : mains, dos, chapeaux, lunettes, compagnons, décors…','🏆 Nouveaux trophées pour le jeu d’écriture.']},{v:1,t:'Du nouveau chez Igi !',l:['🪙 Tu gagnes des pièces à chaque partie, et un coffre quand l’objectif du jour est atteint.','🏆 Des trophées à débloquer : parties, séries de jours, mots appris, mondes…','🛍️ La boutique d’Igi : chapeaux, lunettes, écharpes, compagnons, décors et couleurs.','Tes stickers et tout ce que tu as déjà gagné sont conservés.']}];
 var TIER_COINS=[10,20,35,60],TIER_NAMES=['Bronze','Argent','Or','Diamant'];
 var DAILY_GOAL=20,CHEST_COINS=25;
-var STAT_KEYS=['sessions','correct','wrong','perfect','days','bestStreak','chests','early','weekend','comeback','buys'];
-var KINDS=['hat','glasses','neck','pet','theme','skin'];
+var STAT_KEYS=['sessions','correct','wrong','perfect','days','bestStreak','chests','early','weekend','comeback','buys','writes'];
+var KINDS=['hat','glasses','neck','hand','back','pet','theme','skin'];
 
 /* valeurs par défaut de tout champ de récompense : un ancien profil se complète tout seul */
 function fixP(p){
@@ -784,7 +796,7 @@ function fixP(p){
 }
 
 /* ---- trophées ---- */
-var TROPHIES=[],CATS=[['play','Parties'],['acc','Bonnes réponses'],['perfect','Sans faute'],['streak','Jours de suite'],['days','Jours joués'],['lvl','Niveaux'],['stars','Étoiles'],['master','Stickers'],['seen','Mots découverts'],['world','Mondes'],['chest','Coffres'],['style','Style d’Igi'],['fun','Surprises'],['meta','Collection']];
+var TROPHIES=[],CATS=[['play','Parties'],['acc','Bonnes réponses'],['perfect','Sans faute'],['streak','Jours de suite'],['days','Jours joués'],['lvl','Niveaux'],['stars','Étoiles'],['master','Stickers'],['seen','Mots découverts'],['world','Mondes'],['chest','Coffres'],['style','Style d’Igi'],['write','Écriture'],['fun','Surprises'],['meta','Collection']];
 function series(cat,key,rows,o){
   o=o||{};
   rows.forEach(function(r,i){
@@ -809,6 +821,7 @@ WORLDS.forEach(function(w){
 });
 series('chest','chests',[[1,'chest1','Premier coffre','🎁','Atteins l’objectif du jour'],[5,'chest5','Cinq coffres','📦','Ouvre 5 coffres'],[10,'chest10','Dix coffres','🧰','Ouvre 10 coffres'],[25,'chest25','Chasseur de trésors','🏴‍☠️','Ouvre 25 coffres']]);
 series('style','owned',[[1,'style1','Premier objet','🛍️','Obtiens un objet pour Igi'],[3,'style3','Garde-robe','👒','Obtiens 3 objets'],[6,'style6','Fashion Igi','🧣','Obtiens 6 objets'],[12,'style12','Star du podium','🕶️','Obtiens 12 objets'],[20,'style20','Boutique complète','🏬','Obtiens 20 objets']]);
+series('write','writes',[[1,'wr1','Petite plume','✏️','Écris un mot sans aide ni indice'],[10,'wr10','Écrivain','🖊️','Écris 10 mots sans aide'],[25,'wr25','Calligraphe','📝','Écris 25 mots sans aide'],[50,'wr50','Plume d’or','🪶','Écris 50 mots sans aide'],[100,'wr100','Maître écrivain','📜','Écris 100 mots sans aide']]);
 series('fun','early',[[1,'early1','Lève-tôt','🌅','Joue avant 8 h']],{tier:1,secret:true});
 series('fun','weekend',[[1,'wknd1','Week-end studieux','🎒','Joue un samedi ou un dimanche']],{tier:1,secret:true});
 series('fun','comeback',[[1,'back1','Te revoilà !','👋','Reviens après plus d’une semaine']],{tier:2,secret:true});
@@ -849,8 +862,17 @@ shop('neck',[['bow','Nœud papillon',20,'🎀'],['scarf','Écharpe',30,'🧣'],[
 shop('pet',[['duck','Poussin',50,'🐥'],['bug','Coccinelle',40,'🐞'],['fly','Papillon',60,'🦋'],['turtle','Tortue',70,'🐢'],['dragon','Mini dragon','l15','🐉'],['unicorn','Licorne','b:streak14','🦄']]);
 shop('theme',[['sunset','Coucher de soleil',40,'🌇'],['night','Nuit étoilée',50,'🌃'],['forest','Forêt',60,'🌲'],['sea','Mer',70,'🌊'],['candy','Bonbons','l10','🍭']]);
 shop('skin',[['#6A4B3A','Brun d’origine',0,'🟤'],['#8C5A8C','Prune',25,'🟣'],['#3E7CB1','Bleu nuit',25,'🔵'],['#4E9B6B','Mousse',25,'🟢'],['#C8553D','Rouille',30,'🟠'],['#D96B9C','Rose',30,'🌸'],['#E0A526','Miel','l4','🍯'],['#2B2D42','Ombre','b:play25','⚫'],['#9AA5B1','Argent','b:perf10','⚪']]);
+
+shop('hat',[['santa','Bonnet de Noël',35,'🎅'],['chef','Toque de chef',45,'👨‍🍳'],['grad','Chapeau de diplômé',70,'🎓'],['halo','Auréole','l6','😇'],['catears','Oreilles de chat',40,'🐱'],['bunny','Oreilles de lapin',40,'🐰'],['cowboy','Chapeau de cowboy',55,'🤠'],['helmet','Casque',50,'⛑️'],['headband','Bandeau',15,'🎽'],['flower','Couronne de fleurs','l3','🌸']]);
+shop('glasses',[['square','Lunettes carrées',30,'🤓'],['monocle','Monocle',65,'🧐'],['3d','Lunettes 3D',40,'🎬'],['mask','Masque de héros','b:perf5','🦸'],['goggles','Lunettes de piscine',35,'🏊']]);
+shop('neck',[['tie','Cravate',40,'👔'],['necklace','Collier de perles',50,'📿'],['bell','Clochette',25,'🔔'],['bandana','Bandana',30,'🧣'],['lei','Collier de fleurs','l7','🌺']]);
+shop('hand',[['ball','Ballon',20,'⚽'],['balloon','Ballon gonflable',15,'🎈'],['rose','Rose',25,'🌹'],['apple','Pomme',10,'🍎'],['guitar','Guitare',60,'🎸'],['torch','Lampe de poche',30,'🔦'],['wand','Baguette magique',90,'🪄'],['icecream','Glace',20,'🍦'],['book','Livre',35,'📚'],['trophy','Coupe','b:play10','🏆'],['crystal','Boule de cristal',80,'🔮'],['palette','Palette de peinture',45,'🎨'],['sword','Épée en bois','l9','🗡️'],['mic','Micro',40,'🎤']]);
+shop('back',[['bag','Sac à dos',30,'🎒'],['kite','Cerf-volant',35,'🪁'],['cloud','Petit nuage',50,'☁️'],['rainbow','Arc-en-ciel',85,'🌈'],['star','Étoile filante',70,'🌠'],['shield','Bouclier','b:streak5','🛡️'],['moon','Lune',60,'🌙'],['sun','Soleil','l12','☀️']]);
+shop('pet',[['cat','Chaton',60,'🐱'],['dog','Chiot',60,'🐶'],['rabbit','Lapin',55,'🐰'],['fox','Renard',75,'🦊'],['panda','Panda',90,'🐼'],['frog','Grenouille',45,'🐸'],['octopus','Pieuvre',80,'🐙'],['bee','Abeille',35,'🐝'],['owl','Hibou','b:master10','🦉'],['penguin','Pingouin',70,'🐧'],['trex','Dinosaure','l11','🦖'],['robot','Robot','l13','🤖'],['alien','Extraterrestre','b:acc250','👽'],['ghost','Fantôme','b:streak7','👻']]);
+shop('theme',[['space','Espace',90,'🚀'],['desert','Désert',55,'🏜️'],['snow','Neige',65,'⛄'],['rainbow','Arc-en-ciel',100,'🌈'],['meadow','Prairie',45,'🌼'],['lava','Volcan','l14','🌋']]);
+shop('skin',[['#2E7D6B','Sapin',30,'🟢'],['#B03A2E','Cerise',30,'🔴'],['#5B3FA0','Violet royal',40,'🟣'],['#1F6FA8','Océan',40,'🔵'],['#F28C28','Mandarine',35,'🟠'],['#E8C547','Blé',35,'🟡'],['#3B3B3B','Charbon','b:play10','⚫'],['#F5F5F5','Neige','b:streak7','⚪'],['#FF5A8C','Bonbon','l6','🍬'],['#33D6C4','Menthe','l9','🍃']]);
 var SBYID={};SHOP.forEach(function(it){SBYID[it.id]=it;});
-var KIND_LABEL={hat:'Chapeaux',glasses:'Lunettes',neck:'Cou',pet:'Compagnons',theme:'Décors',skin:'Couleur des piquants'};
+var KIND_LABEL={hat:'Chapeaux',glasses:'Lunettes',neck:'Cou',pet:'Compagnons',theme:'Décors',skin:'Couleur des piquants',hand:'Objets en main',back:'Sur le dos'};
 
 function parseLock(l){
   if(!l)return {t:'free'};
@@ -896,11 +918,36 @@ var IGI_NECK={
   scarf:'<path d="M60 94q22 14 46-2l3 9q-24 15-50 1z" fill="#E02F6B" '+LN+'/><path d="M70 101l-3 15h11l-1-12z" fill="#E02F6B" '+LN+'/>',
   medal:'<path d="M66 92q14 18 30 2" fill="none" '+LN+'/><circle cx="80" cy="108" r="7" fill="#FFC83A" '+LN+'/>'
 };
+
+IGI_HAT.santa='<path d="M64 62q2-28 30-26q14 6 16 26z" fill="#D93B41" '+LN+'/><rect x="62" y="58" width="50" height="9" rx="4.5" fill="#fff" '+LN+'/><circle cx="100" cy="38" r="6" fill="#fff" '+LN+'/>';
+IGI_HAT.chef='<rect x="68" y="52" width="38" height="10" rx="3" fill="#fff" '+LN+'/><path d="M66 54q-8-18 8-20q4-10 14-6q10-2 14 8q14 2 4 18z" fill="#fff" '+LN+'/>';
+IGI_HAT.grad='<path d="M72 50v10q14 8 28 0v-10" fill="#1B2150" '+LN+'/><path d="M86 34l32 10l-32 10l-32-10z" fill="#1B2150" '+LN+'/><path d="M118 44v14" fill="none" '+LN+'/><circle cx="118" cy="60" r="2.5" fill="#FFC83A"/>';
+IGI_HAT.halo='<ellipse cx="86" cy="46" rx="18" ry="5" fill="none" stroke="#FFC83A" stroke-width="5"/>';
+IGI_HAT.catears='<path d="M66 62l2-22l14 12z" fill="#6A4B3A" '+LN+'/><path d="M106 62l-2-22l-14 12z" fill="#6A4B3A" '+LN+'/><path d="M71 54l1-8l6 5z" fill="#FF8FAE"/>';
+IGI_HAT.bunny='<ellipse cx="74" cy="38" rx="6" ry="17" fill="#F6D9B8" '+LN+'/><ellipse cx="98" cy="38" rx="6" ry="17" fill="#F6D9B8" '+LN+'/><ellipse cx="74" cy="39" rx="2.5" ry="11" fill="#FF8FAE"/><ellipse cx="98" cy="39" rx="2.5" ry="11" fill="#FF8FAE"/>';
+IGI_HAT.cowboy='<path d="M70 58q0-22 16-22q16 0 16 22z" fill="#A0693F" '+LN+'/><ellipse cx="86" cy="58" rx="34" ry="6" fill="#A0693F" '+LN+'/>';
+IGI_HAT.helmet='<path d="M62 64q0-26 24-26q24 0 24 26z" fill="#9AA5B1" '+LN+'/><rect x="60" y="60" width="52" height="6" rx="3" fill="#FFC83A" '+LN+'/>';
+IGI_HAT.headband='<path d="M62 62q24-12 48 0" fill="none" stroke="#E02F6B" stroke-width="7" stroke-linecap="round"/>';
+IGI_HAT.flower='<g fill="#FF8FAE" '+LN+'><circle cx="86" cy="42" r="6"/><circle cx="95" cy="48" r="6"/><circle cx="91" cy="57" r="6"/><circle cx="81" cy="57" r="6"/><circle cx="77" cy="48" r="6"/></g><circle cx="86" cy="50" r="4" fill="#FFC83A"/>';
+IGI_GLASSES.square='<rect x="79" y="63" width="22" height="18" rx="3" fill="#fff" fill-opacity=".35" '+LN+'/><path d="M79 72h-17" fill="none" '+LN+'/>';
+IGI_GLASSES.monocle='<circle cx="90" cy="72" r="9" fill="#fff" fill-opacity=".3" stroke="#FFC83A" stroke-width="3.5"/><path d="M90 81q-2 14-8 22" fill="none" stroke="#FFC83A" stroke-width="2"/>';
+IGI_GLASSES['3d']='<rect x="79" y="64" width="11" height="16" fill="#D93B41" fill-opacity=".7"/><rect x="90" y="64" width="11" height="16" fill="#33B5F2" fill-opacity=".7"/><rect x="79" y="64" width="22" height="16" rx="3" fill="none" '+LN+'/><path d="M79 72h-17" fill="none" '+LN+'/>';
+IGI_GLASSES.mask='<path d="M77 66q13-7 26 0v13q-13 5-26 0z" fill="#1B2150"/><circle cx="90" cy="72" r="3" fill="#fff"/>';
+IGI_GLASSES.goggles='<circle cx="90" cy="72" r="11" fill="#33B5F2" fill-opacity=".4" stroke="#FF8844" stroke-width="5"/><path d="M79 72h-17" fill="none" stroke="#FF8844" stroke-width="5"/>';
+IGI_NECK.tie='<path d="M80 94l-7 4l7 4l7-4z" fill="#D93B41" '+LN+'/><path d="M80 102l-8 16l8 5l8-5z" fill="#D93B41" '+LN+'/>';
+IGI_NECK.necklace='<path d="M66 92q14 16 30 2" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="0.1 7" stroke-linecap="round"/><circle cx="81" cy="104" r="4" fill="#E02F6B" '+LN+'/>';
+IGI_NECK.bell='<path d="M64 93q16 10 34 0" fill="none" stroke="#E02F6B" stroke-width="5"/><circle cx="81" cy="101" r="6" fill="#FFC83A" '+LN+'/>';
+IGI_NECK.bandana='<path d="M64 92q18 12 38-2l-18 24z" fill="#33B5F2" '+LN+'/>';
+IGI_NECK.lei='<path d="M64 92q18 16 38 0" fill="none" stroke="#FF8FAE" stroke-width="8" stroke-dasharray="6 3" stroke-linecap="round"/>';
+var IGI_HANDE={},IGI_BACKE={};
+SHOP.forEach(function(it){if(it.kind==='hand')IGI_HANDE[it.val]=it.emoji;if(it.kind==='back')IGI_BACKE[it.val]=it.emoji;});
 var PET_EMO={};SHOP.forEach(function(it){if(it.kind==='pet')PET_EMO[it.val]=it.emoji;});
 
 function igiGear(p){
   var e=p&&p.equipped?p.equipped:{};
-  return {neck:IGI_NECK[e.neck]||'',glasses:IGI_GLASSES[e.glasses]||'',hat:IGI_HAT[e.hat]||'',pet:PET_EMO[e.pet]||'',skin:e.skin||''};
+  return {neck:IGI_NECK[e.neck]||'',glasses:IGI_GLASSES[e.glasses]||'',hat:IGI_HAT[e.hat]||'',pet:PET_EMO[e.pet]||'',skin:e.skin||'',
+    hand:IGI_HANDE[e.hand]?'<text x="104" y="112" font-size="26" text-anchor="middle">'+IGI_HANDE[e.hand]+'</text>':'',
+    back:IGI_BACKE[e.back]?'<text x="26" y="58" font-size="32" text-anchor="middle">'+IGI_BACKE[e.back]+'</text>':''};
 }
 
 VIEWS.trophies=function(){
@@ -927,9 +974,16 @@ VIEWS.shop=function(){
   h+='<h1 class="pt">Boutique d’Igi</h1>';
   h+='<section class="igistage th-'+esc(e.theme||'none')+'">'+igi('happy',150)+'</section>';
   if(S.smsg)h+='<p class="flashmsg" role="status">'+esc(S.smsg)+'</p>';
-  KINDS.forEach(function(kind){
+  var cur=S.shopk||KINDS[0];
+  h+='<div class="stabs" role="tablist">';
+  KINDS.forEach(function(k){
+    var nn=SHOP.filter(function(it){return it.kind===k;}).length;
+    h+='<button class="stab'+(k===cur?' on':'')+'" role="tab" aria-selected="'+(k===cur)+'" data-act="shoptab" data-kind="'+k+'">'+KIND_LABEL[k]+' <small>'+nn+'</small></button>';
+  });
+  h+='</div>';
+  [cur].forEach(function(kind){
     var items=SHOP.filter(function(it){return it.kind===kind;});
-    h+='<h2 class="sec">'+KIND_LABEL[kind]+'</h2><div class="shopg">';
+    h+='<div class="shopg">';
     if(kind!=='skin')h+='<button class="si'+(!e[kind]?' on':'')+'" data-act="unequip" data-kind="'+kind+'"><span class="se">∅</span><span class="sn">Aucun</span><span class="ss">'+(!e[kind]?'Porté ✓':'Enlever')+'</span></button>';
     items.forEach(function(it){
       var ok=usable(p,it),on=e[kind]===it.val,price=itemPrice(it);
@@ -943,6 +997,7 @@ VIEWS.shop=function(){
 
 ACT.trophies=function(){go('trophies');};
 ACT.shop=function(){S.smsg='';go('shop');};
+ACT.shoptab=function(t){S.shopk=t.dataset.kind;S.smsg='';render();};
 ACT.item=function(t){
   var it=SBYID[t.dataset.id],p=me();if(!it||!p)return;
   fixP(p);
@@ -970,7 +1025,7 @@ ACT.newsok=function(){S.news=null;render();};
 DB.players.forEach(fixP);
 if((DB.seenVer||0)<REWARDS_VERSION){
   DB.players.forEach(function(p){award(p);});
-  if(DB.players.length)S.news=NEWS[NEWS.length-1];
+  if(DB.players.length)S.news=NEWS[0];
   DB.seenVer=REWARDS_VERSION;
   save();
 }
@@ -1012,7 +1067,7 @@ VIEWS.home=function(){
   h+='<button class="daily'+(can?'':' off')+'" data-act="daily"'+(can?'':' disabled')+'><span class="dt">Tagesaufgabe</span><span class="ds">Défi du jour</span><span class="dp">'+(can?'10 mots à réviser, choisis par Igi':'Découvre au moins 4 mots dans un monde pour le débloquer')+'</span></button>';
   var dc=(p.daily&&p.daily.date===todayN())?p.daily.count:0,dg=Math.min(DAILY_GOAL,dc),dd=!!(p.daily&&p.daily.date===todayN()&&p.daily.chest);
   h+='<section class="goal"><div class="row"><b>Objectif du jour</b><span>'+(dd?'Coffre ouvert 🎁':dg+' / '+DAILY_GOAL+' bonnes réponses · coffre +'+CHEST_COINS+' 🪙')+'</span></div><span class="bar"><i style="--p:'+Math.round(dg/DAILY_GOAL*100)+'%"></i></span></section>';
-  h+='<div class="row rw"><button class="btn small" data-act="trophies">🏆 Trophées</button><button class="btn small alt" data-act="shop">🛍️ Boutique d’Igi</button></div>';
+  h+='<div class="row rwb"><button class="btn small" data-act="trophies">🏆 Trophées</button><button class="btn small alt" data-act="shop">🛍️ Boutique d’Igi</button></div>';
   if(TTS.ready&&(!TTS.ok||!TTS.voices.length))h+='<button class="note" data-act="settings"><b>Pas de voix allemande détectée.</b> Touche ici pour voir comment l’ajouter.</button>';
   h+='<h2 class="sec">Choisis un monde</h2><div class="worlds">';
   WORLDS.forEach(function(w){
@@ -1046,7 +1101,7 @@ VIEWS.world=function(){
   S.msg=null;
   h+='<section class="wban" style="--w:'+w.c+'"><span class="sticker big">'+w.e+'</span><div><h1>'+w.de+'</h1><p class="fr">'+w.fr+' · '+(n?pr.m+' / '+pr.t+' mots appris':'aucun mot pour l’instant')+'</p><span class="bar"><i style="--p:'+Math.round(pr.pct*100)+'%"></i></span></div></section>';
   h+='<p class="hint" style="margin:0 0 8px">Sens des exercices</p>'+dirCtl();
-  h+='<div class="acts" style="margin-top:18px">'+actBtn('learn','Découvrir','Regarde et écoute chaque mot',ICON.cards,n<1)+actBtn('quiz','Écoute et choisis','Retrouve la bonne réponse',ICON.spk,few)+actBtn('memory','Memory','Trouve les paires',ICON.grid,few)+actBtn('letters','Les lettres','Remets les lettres dans l’ordre',ICON.abc,few)+'</div>';
+  h+='<div class="acts" style="margin-top:18px">'+actBtn('learn','Découvrir','Regarde et écoute chaque mot',ICON.cards,n<1)+actBtn('quiz','Écoute et choisis','Retrouve la bonne réponse',ICON.spk,few)+actBtn('memory','Memory','Trouve les paires',ICON.grid,few)+actBtn('letters','Les lettres','Remets les lettres dans l’ordre',ICON.abc,few)+actBtn('write','Écris le mot','Écris tout le mot, avec un indice si besoin','✍️',n<1)+'</div>';
   if(few)h+='<p class="hint" style="margin-top:12px">Ajoute au moins 4 mots pour débloquer les jeux.</p>';
   if(n){
     h+='<h2 class="sec">Les mots <small>touche pour écouter</small></h2>';
@@ -1285,6 +1340,7 @@ function finish(o){
   p.stars+=stars;p.xp+=o.xp;bumpStreak();
   st.sessions++;st.correct+=o.ok||0;st.wrong+=Math.max(0,(o.n||0)-(o.ok||0));
   if(o.acc>=1)st.perfect++;
+  st.writes+=o.wr||0;
   if(first){st.days++;if(gap>7)st.comeback++;}
   st.bestStreak=Math.max(st.bestStreak,p.streak);
   if(d.getHours()<8)st.early++;
@@ -1344,10 +1400,11 @@ ACT.lnext=function(){
 };
 
 /* quiz */
-ACT.hearfr=function(){if(S.screen==='letters'){var x=S.lt.list[S.lt.i];if(x)speak(x.f,{lang:'fr'});}};
+ACT.hearfr=function(){var x=S.screen==='letters'?S.lt.list[S.lt.i]:S.screen==='write'?S.wr.list[S.wr.i]:null;if(x)speak(x.f,{lang:'fr'});};
 ACT.hear=function(){
   if(S.screen==='quiz')speak(say(S.q.qs[S.q.i].w));
   else if(S.screen==='letters')speak(say(S.lt.list[S.lt.i]));
+  else if(S.screen==='write')speak(say(S.wr.list[S.wr.i]));
 };
 ACT.ans=function(t){
   var Q=S.q;if(Q.ans)return;
@@ -1477,6 +1534,74 @@ ACT.lnextw=function(){
   }
   setupLetter();render();
   if(L.mode==='hear')speak(say(L.list[L.i]));
+};
+
+
+/* jeu « Écris le mot » : le mot est à écrire en entier, sans aide ; l'indice dévoile une lettre de plus à chaque appui */
+function normW(t){return String(t).trim().toLowerCase().replace(/ß/g,'ss').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/\s+/g,' ');}
+function setupWrite(){var W=S.wr;W.hint=0;W.mist=0;W.done=false;W.gave=false;W.val='';W.msg=null;W.err=false;}
+function startWrite(wid){
+  var w=WORLD[wid];
+  if(!w||!w.words.length){S.msg='Ajoute d’abord des mots pour ce jeu.';render();return;}
+  S.wr={w:wid,list:shuffle(w.words).slice(0,6),i:0,ok:0};
+  S.backTo='world';
+  setupWrite();go('write');wfocus();
+}
+function wfocus(){setTimeout(function(){var i=document.getElementById('wi');if(i&&i.focus)i.focus();},60);}
+function wHintText(W,x){
+  return x.w.split('').map(function(c,i){return c===' '?' ':(i<W.hint?c:'_');}).join(' ');
+}
+VIEWS.write=function(){
+  var W=S.wr,x=W.list[W.i],h=gameTop(W.i+(W.done?1:0),W.list.length);
+  h+='<div class="stage"><div class="prompt">'+picHTML(x)+'<p class="frsm">'+esc(x.f)+'</p><button class="btn small ghost" data-act="hearfr" aria-label="Écouter le mot en français">'+ICON.spk+' Écouter</button>';
+  h+='<p class="hint">'+(W.done?(W.gave?'Voici la réponse :':'Bravo !'):'Écris ce mot en allemand, sans aide')+'</p></div>';
+  if(W.done){
+    h+='<div class="fb '+(W.gave?'bad':'ok')+'">'+igi(W.gave?'sad':'cheer',64)+'<div class="fbt"><p class="de">'+esc(W.gave?'Das nächste Mal!':W.msg.de)+'</p><p><b>'+esc(say(x))+'</b> = '+esc(x.f)+' <button class="btn small ghost icon" data-act="hear" aria-label="Écouter en allemand">'+ICON.spk+'</button></p></div><button class="btn alt" data-act="wnext">Weiter</button></div>';
+  }else{
+    if(W.hint)h+='<p class="whint" aria-live="polite">'+esc(wHintText(W,x))+'</p>';
+    h+='<form class="wform" data-form="wr"><label class="sr" for="wi" style="position:absolute;left:-9999px">Le mot en allemand</label>';
+    h+='<input id="wi" type="text" class="'+(W.err?'err':'')+'" value="'+esc(W.val)+'" maxlength="40" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" lang="de" placeholder="…">';
+    if(W.err)h+='<p class="flashmsg" role="status" style="background:color-mix(in srgb,var(--bad) 22%,var(--surface))">Pas tout à fait : vérifie les lettres et réessaie.</p>';
+    h+='<div class="wchars"><button type="button" class="btn small ghost" data-act="wch" data-c="ä">ä</button><button type="button" class="btn small ghost" data-act="wch" data-c="ö">ö</button><button type="button" class="btn small ghost" data-act="wch" data-c="ü">ü</button><button type="button" class="btn small ghost" data-act="wch" data-c="ß">ß</button></div>';
+    h+='<button class="btn alt" type="submit">Valider</button>';
+    h+='<div class="row center"><button type="button" class="btn small ghost" data-act="whint">Indice ('+W.hint+')</button><button type="button" class="btn small ghost" data-act="wgive">Je ne sais pas</button></div></form>';
+  }
+  return h+'</div>';
+};
+function wSave(){var i=document.getElementById('wi');if(i)S.wr.val=i.value;}
+function wSubmit(){
+  var W=S.wr;if(!W||W.done)return;
+  var i=document.getElementById('wi'),v=i?i.value:'',x=W.list[W.i];
+  if(!v.trim())return;
+  W.val=v;
+  if(normW(v)===normW(x.w)){
+    W.done=true;W.err=false;W.msg=pick(PRAISE);
+    var clean=(W.mist===0&&W.hint===0);
+    grade(x,clean);if(clean)W.ok++;
+    sfx.ok();speak(say(x));render();
+  }else{W.mist++;W.err=true;sfx.bad();render();wfocus();}
+}
+ACT.write=function(){startWrite(S.world);};
+ACT.whint=function(){
+  var W=S.wr,x=W.list[W.i];if(!W||W.done)return;
+  wSave();W.err=false;
+  if(W.hint<x.w.replace(/ /g,'').length)W.hint++;
+  sfx.pop();render();wfocus();
+};
+ACT.wch=function(t){var W=S.wr;if(!W||W.done)return;wSave();W.val+=t.dataset.c;W.err=false;render();wfocus();};
+ACT.wgive=function(){
+  var W=S.wr,x=W.list[W.i];if(!W||W.done)return;
+  W.done=true;W.gave=true;grade(x,false);sfx.bad();speak(say(x));render();
+};
+ACT.wnext=function(){
+  var W=S.wr;if(!W||!W.done)return;
+  W.i++;
+  if(W.i>=W.list.length){
+    var wid=W.w,n=W.list.length;
+    finish({ok:W.ok,n:n,acc:W.ok/n,xp:W.ok*12+(n-W.ok)*4+5,wr:W.ok,sub:W.ok+' / '+n+' mots écrits sans aide ni indice',again:function(){startWrite(wid);}});
+    return;
+  }
+  setupWrite();render();wfocus();
 };
 
 ACT.again=function(){if(S.res&&S.res.again)S.res.again();};
@@ -1679,6 +1804,7 @@ app.addEventListener('submit',function(e){
   e.preventDefault();
   var fm=e.target.getAttribute('data-form');
   if(fm==='addw'){addWordFromForm();return;}
+  if(fm==='wr'){wSubmit();return;}
   if(fm==='fsword'){
     var g=function(i){return (document.getElementById(i).value||'').trim();};
     if(!isEditor()||!window.IGI_CLOUD||!g('fsd')||!g('fsf'))return;
